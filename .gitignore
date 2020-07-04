@@ -1,0 +1,13 @@
+# Text editor backups #
+#######################
+*~
+*.pyc
+*.pyo
+
+# Irrelevant background files #
+###############################
+/meta/
+
+# Personal files #
+##################
+/poisson/private/
