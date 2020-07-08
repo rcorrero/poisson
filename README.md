@@ -12,6 +12,7 @@ Repository Structure
 ├── LICENSE
 ├── README.md
 ├── notes
+│   ├── Hacedor\ ?\200.md
 │   ├── Panoptis\ ?\200\ Imagery\ Processing\ Pipeline.md
 │   └── Poisson\ ?\200\ Development.md
 ├── papers
@@ -19,7 +20,7 @@ Repository Structure
 │   └── vessel_detect_survey.pdf
 ├── poisson
 │   ├── panoptis
-│   └── stropheus
+│   └── hacedor
 └── setup.py
 
 ```    

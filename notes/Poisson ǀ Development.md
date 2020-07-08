@@ -1,7 +1,7 @@
 ---
 title: Poisson | Development
 created: '2020-06-26T17:02:47.180Z'
-modified: '2020-07-04T17:43:16.524Z'
+modified: '2020-07-05T18:36:29.931Z'
 ---
 
 # Poisson | Development
@@ -18,4 +18,4 @@ The first milestone is to develop the satellite image processing pipeline, _pano
 
 One and three are scaffolding which supports the main development, the model. The model itself is by far the most computationally complex part of poisson because it must identify vessels from raw satellite imagery. 
 
-To create and train a model with acceptable performance we need a training socket, called _stropheus_. This handles the I/O for the model, as well as hyperparameter selection, performance analysis, and report generation (describing the performance of the model). 
+To create and train a model with acceptable performance we need a training socket, called _hacedor_. This handles the I/O for the model, as well as hyperparameter selection, performance analysis, and report generation (describing the performance of the model). 
