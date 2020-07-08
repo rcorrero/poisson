@@ -3,7 +3,7 @@ poisson &mdash; Richard Correro
 
 poisson is a python module for small vessel detection in optical satellite imagery. This module provides a framework for training ship detection models and using them to identify vessels in satellite imagery from [planet](https://www.planet.com/). 
 
-This repository contains the module itself, a trained model and its associated files, working notes from the modules creation, and several papers relavant to vessel detection methods.
+This repository is a work-in-progress. It will eventually contain the module itself, a trained model and its associated files, working notes from the module's creation, and several papers relevant to vessel detection methods.
 
 Repository Structure
 ------------
