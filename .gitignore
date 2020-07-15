@@ -8,6 +8,11 @@
 ###############################
 /meta/
 
+
 # Personal files #
 ##################
 /poisson/private/
+
+# ignore all . folders but include . files #
+############################################
+.*/

@@ -1,7 +1,7 @@
 ---
 title: Panoptis | Imagery Processing Pipeline
 created: '2020-06-25T20:23:26.524Z'
-modified: '2020-07-02T21:08:49.188Z'
+modified: '2020-07-15T15:44:25.196Z'
 ---
 
 # Panoptis | Imagery Processing Pipeline
@@ -27,6 +27,12 @@ The basic statistics we need for each detected object are its
 - Other classification data based on the above
 
 
+__Update 2020/7/14:__ I've spent the last two weeks working on the vessel detection and segmentation algorithm in pytorch. My focus has been developing _hacedor_ and the model itself. Now that the training socket is functional (or at least _minimally-viable_), I'm returning to _panoptis_. The main develop job is to handle image I/O from GCS, passing images to the trained model, processing the results, and storing them in a dataframe/datatable.
+
+### Sample Labeling 
+The target samples are  obtained from [Planet](), each with four channels and of a fixed size. The AOI, however, may only inlcude part of the image, and as such the region actually provided to the model may be of arbitrary size. [The model architecture]() can handle images of different sizes. I'm unsure whether different numbers of channels are also acceptable.
+ 
+
 ## The Learning Problem
 Achieving acceptable performance and generalizability requires framing vessel detection as a machine learning problem. 
 
@@ -43,4 +49,3 @@ The logical avenue for development is toward deeper models, but there is likely 
 ### Signal Source
 
 [This dataset](https://www.iuii.ua.es/datasets/masati/) contains images of land and sea with seaborne vessels labeled with bounding boxes. [This dataset](https://www.kaggle.com/c/airbus-ship-detection/overview) contains roughly a quarter-million land and sea images with similar labels, of various resolutions and clearly gathered from several different imaging platforms. The latter lacks the clear catagorization which the former sports, but its being much larger makes it more attractive as a first training set. 
-
