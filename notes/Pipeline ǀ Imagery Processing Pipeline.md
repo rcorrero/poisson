@@ -1,7 +1,7 @@
 ---
 title: Pipeline | Imagery Processing Pipeline
 created: '2020-06-25T20:23:26.524Z'
-modified: '2020-07-21T18:40:23.372Z'
+modified: '2020-07-21T18:45:05.111Z'
 ---
 
 # Pipeline | Imagery Processing Pipeline
@@ -50,4 +50,6 @@ The logical avenue for development is toward deeper models, but there is likely 
 
 
 ### After The Model
+
+
 

@@ -243,6 +243,7 @@ if __name__ == '__main__':
     max_thresh = 300
     batch_size = 16
     ship_dir = r'../../../airbus-dataset/'
+    state_dict_path = r'maskrcnn_resnet50_state_dict.pth'
     
     print('-------------')
     
@@ -302,6 +303,9 @@ if __name__ == '__main__':
 
     # get the model using our helper function
     model = get_instance_segmentation_model(num_classes)
+    
+    if isinstance(state_dict_path, str):
+        model.load_state_dict(torch.load(state_dict_path))
     # move model to the right device
     model.to(device)
 
