@@ -1,12 +1,10 @@
 ---
-title: Panoptis | Imagery Processing Pipeline
+title: Pipeline | Imagery Processing Pipeline
 created: '2020-06-25T20:23:26.524Z'
-modified: '2020-07-15T15:44:25.196Z'
+modified: '2020-07-21T18:40:23.372Z'
 ---
 
-# Panoptis | Imagery Processing Pipeline
-
-This is a working paper recording the development of _panoptis_, a satellite image processing pipeline designed for [poisson](https://github.com/rcorrero/poisson). πᾰνόπτηϛ means "all-seeing" in Attic Greek ([Woodhouse](http://artflsrv02.uchicago.edu/cgi-bin/efts/dicos/woodhouse_test.pl?keyword=^All-seeing,%20adj.)).
+# Pipeline | Imagery Processing Pipeline
 
 ## Architecture
 The image processing pipeline itself is written entirely in python using several third-party packages. As of now my intention is to build panoptis for use on a single machine until satisfactory performance is attained, at which point I will refactor the code, containerize it, and run it at scale using a container orchestration framework. Satellite image processing is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel) in that the task may be separated by area of interest (AOI), image type, band, etc. When searching for objects on near-shore open ocean large areas need to be analyzed, and this means that any interesting applications require large-scale image processing. To run the code on several replicates the code may be structured such that each instance processes images linked to from a database containing the list of images to be processed. Once the statistics of interest are obtained from the imagery, these results may be written to another database containing the results from all replicates. __Update:__ Initial calculations suggest that a trained model running on a single machine should be able to handle the largest AOIs we will need to label. Containerization is likely unecessary, but this is not certain.
@@ -49,3 +47,7 @@ The logical avenue for development is toward deeper models, but there is likely 
 ### Signal Source
 
 [This dataset](https://www.iuii.ua.es/datasets/masati/) contains images of land and sea with seaborne vessels labeled with bounding boxes. [This dataset](https://www.kaggle.com/c/airbus-ship-detection/overview) contains roughly a quarter-million land and sea images with similar labels, of various resolutions and clearly gathered from several different imaging platforms. The latter lacks the clear catagorization which the former sports, but its being much larger makes it more attractive as a first training set. 
+
+
+### After The Model
+

@@ -1,10 +1,10 @@
 ---
-title: Hacedor | Training Socket for Vessel Detection Models
+title: Trainer | Training Socket for Vessel Detection Models
 created: '2020-07-05T18:13:08.397Z'
-modified: '2020-07-14T13:45:58.452Z'
+modified: '2020-07-21T17:33:40.519Z'
 ---
 
-# Hacedor | Training Socket for Vessel Detection Models
+# Trainer | Training Socket for Vessel Detection Models
 
 Hacedor contains all of the code necessary to train vessel detection models using labeled datasets. [This dataset](https://www.iuii.ua.es/datasets/masati/) contains images of land and sea with seaborne vessels labeled with bounding boxes. [This dataset](https://www.kaggle.com/c/airbus-ship-detection/overview) contains roughly a quarter-million land and sea images with similar labels, of various resolutions and clearly gathered from several different imaging platforms. The latter lacks the clear catagorization which the former sports, but its being much larger makes it more attractive as a first training set.
 
