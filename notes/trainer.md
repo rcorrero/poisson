@@ -1,12 +1,12 @@
 ---
 title: Trainer | Training Socket for Vessel Detection Models
 created: '2020-07-05T18:13:08.397Z'
-modified: '2020-07-21T17:33:40.519Z'
+modified: '2020-07-26T19:07:04.296Z'
 ---
 
 # Trainer | Training Socket for Vessel Detection Models
 
-Hacedor contains all of the code necessary to train vessel detection models using labeled datasets. [This dataset](https://www.iuii.ua.es/datasets/masati/) contains images of land and sea with seaborne vessels labeled with bounding boxes. [This dataset](https://www.kaggle.com/c/airbus-ship-detection/overview) contains roughly a quarter-million land and sea images with similar labels, of various resolutions and clearly gathered from several different imaging platforms. The latter lacks the clear catagorization which the former sports, but its being much larger makes it more attractive as a first training set.
+This module contains all of the code necessary to train vessel detection models using labeled datasets. [This dataset](https://www.iuii.ua.es/datasets/masati/) contains images of land and sea with seaborne vessels labeled with bounding boxes. [This dataset](https://www.kaggle.com/c/airbus-ship-detection/overview) contains roughly a quarter-million land and sea images with similar labels, of various resolutions and clearly gathered from several different imaging platforms. The latter lacks the clear catagorization which the former sports, but its being much larger makes it more attractive as a first training set.
 
 As a working document, this records the hacedor development process. This can be viewed roughly as the creation of two objects, each inseparable from the other: a trained vessel detection model, and the structural code necessary to train it. 
 
