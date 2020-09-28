@@ -12,7 +12,7 @@ The work necessary to extract the relevant information from this imagery and pro
 
 The outputs of (2) should be novel and useful to policy-makers and other stakeholders. It is of course our job to summarize and interpret the results of this model.
 
-This repository is a work-in-progress. It will eventually contain the module itself, a trained model and its associated files, and working notes from the module's creation.
+This repository is a work-in-progress. It will eventually contain a trained vessel-detection model, statistical models created using data derived from the vessel detection model, the code necessary to implement both models, and working notes from the module's creation.
 
 Support
 -----------
