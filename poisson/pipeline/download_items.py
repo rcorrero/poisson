@@ -13,8 +13,9 @@ PLANET_PASSWORD = os.getenv('PL_PASSWORD')
 ORDER_NAME = os.getenv('ORDER_NAME')
 ITEM_ID_PATH = os.getenv('ITEM_ID_PATH')
 PATH_PREFIX = os.getenv('PATH_PREFIX')
-
-GOOGLE_CREDENTIALS = os.getenv('APPLICATION_CREDENTIALS')
+ITEM_TYPE = os.getenv('ITEM_TYPE')
+PRODUCT_BUNDLE = os.getenv('PRODUCT_BUNDLE')
+GOOGLE_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 BUCKET_NAME = os.getenv('BUCKET_NAME')
 
 orders_url = 'https://api.planet.com/compute/ops/orders/v2'
@@ -24,13 +25,14 @@ user = PLANET_USER
 password = PLANET_PASSWORD
 name = ORDER_NAME
 subscription_id = 0
-item_type = "PSScene4Band" # Make env var
-product_bundle = "analytic"
+item_type = ITEM_TYPE
+product_bundle = PRODUCT_BUNDLE
 single_archive = False
-archive_filename = "test_01"
+archive_filename = ARCHIVE_FILENAME
 bucket = BUCKET_NAME
 path_prefix = PATH_PREFIX
 email = True
+max_num_samples = 500
 
 
 def create_request(user, password, name, subscription_id, item_ids, item_type, 
@@ -66,13 +68,15 @@ def create_request(user, password, name, subscription_id, item_ids, item_type,
 def place_order(request, auth):
     response = requests.post(orders_url, data=json.dumps(request), auth=auth, headers=headers)
     print("Response ok? ", response.ok)
+    if not response.ok:
+      print(response.json())
     order_id = response.json()['id']
     print("Order id: ", order_id)
     order_url = orders_url + '/' + order_id
     return order_url
 
 
-def poll_for_success(order_url, auth, num_loops=100):
+def poll_for_success(order_url, auth, num_loops=250):
     print('Order status: ')
     count = 0
     while(count < num_loops):
@@ -84,12 +88,15 @@ def poll_for_success(order_url, auth, num_loops=100):
         end_states = ['success', 'failed', 'partial']
         if state in end_states:
             break
-        time.sleep(10)
+        time.sleep(25)
 
 
 if __name__ == '__main__':
   with open(ITEM_ID_PATH) as f:
       item_ids = f.read().splitlines()
+      if len(item_ids) > max_num_samples:
+        item_ids = item_ids[:max_num_samples]
+      
   with open(GOOGLE_CREDENTIALS) as f:
       credentials = f.read()
       request = create_request(user, password, name, subscription_id, 

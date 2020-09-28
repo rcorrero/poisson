@@ -5,10 +5,8 @@ import json
 PLANET_API_KEY = os.getenv('PL_API_KEY')
 GEO_FILTER_PATH = os.getenv('GEO_FILTER_PATH')
 ITEM_ID_PATH= os.getenv('ITEM_ID_PATH')
-
-# Get all images - Remember to update before 3000
-min_date = "1900-01-01T00:00:00Z"
-max_date = "2999-01-01T00:00:00Z"
+MIN_DATE = os.getenv('MIN_DATE')
+MAX_DATE = os.getenv('MAX_DATE')
 
 # Setup Planet Data API base URL
 URL = "https://api.planet.com/data/v1"
@@ -37,8 +35,8 @@ date_filter = {
     "type": "DateRangeFilter", 
     "field_name": "acquired", 
     "config": {
-        "gte": min_date,
-        "lte": max_date 
+        "gte": MIN_DATE,
+        "lte": MAX_DATE 
     }
 }
 
@@ -91,6 +89,21 @@ if __name__ == '__main__':
     with open(ITEM_ID_PATH, 'w') as f:
       # Loop over all the features from the response
       for item in features:
-          
           f.write(item["id"] + '\n')
+      # Iterate over response pages
+      idx = 2
+      total_num_items = len(features)
+      while response["_links"]["_next"] is not None:
+        response = session.get(response["_links"]["_next"]).json()
+        features = response["features"]
+
+        # Get the number of features present in the response
+        print('On page number %s...' % idx)
+        print("Number of items matching criteria:", len(features))
+        # Loop over all the features from the response
+        for item in features:  
+            f.write(item["id"] + '\n')
+        total_num_items += len(features)
+        idx += 1
+    print('Total number of items matching criteria: ', total_num_items)
     print('Done')
