@@ -16,6 +16,8 @@ This repository is a work-in-progress. It will eventually contain the module its
 
 Support
 -----------
+
 Poisson was developed with the generous support of a research grant from the Stanford University Department of Statistics and continuing support from the Stanford Woods Institute in affiliation with the Stanford Center for Ocean Solutions.
+
 ------------
 Created by Richard Correro in 2020. Contact me at rcorrero at stanford dot edu.
