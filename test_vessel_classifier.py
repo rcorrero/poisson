@@ -91,7 +91,7 @@ class TestVesselClassifier(unittest.TestCase):
         model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                                  aux_logits=False)
         model = model.to('cuda')
-        savepath = '../data/test_vessel_classifier_state_dict.pth'
+        savepath = 'test_vessel_classifier_state_dict.pth'
         torch.save(model.state_dict(), savepath)
         
         
