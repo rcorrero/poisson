@@ -1,0 +1,41 @@
+# Change user to root
+sudo su
+
+# Delete file `/home/jupyter/test.txt`
+rm home/jupyter/test.txt
+
+# Run `vessel_classifier.py` using nohup and save output to `nohup.out`
+nohup python -u vessel_classifier.py > nohup.out &
+
+# Change ownership of `/home/jupyter` and all files therein to rcorrero
+sudo chown -R rcorrero /home/jupyter
+
+# List ownership data and read/write information for `/home/jupyter`
+ls -l /home/jupyter
+
+# Add rcorrero as owner and retain jupyter for `/home/jupyter`
+sudo chown rcorrero:jupyter /home/jupyter
+
+# Give rcorrero read/write/execute permission
+sudo chmod u+rwx /home/jupyter
+
+# Give jupyter read/write/execute permission
+sudo chmod g+rwx /home/jupyter
+
+# Deny other users read/write/execture permission
+sudo chmod o-rwx <path/to/file or directory>
+
+# Copy directory to another location
+cp -R <path_to_source> <path_to_destination/>
+
+# Get GPU info
+nvidia-smi
+
+# See all running processes for user `username`
+ps -U <username>
+
+# Kill running process
+kill <pid>
+
+# Print contents of text file
+cat <path/to/file>
