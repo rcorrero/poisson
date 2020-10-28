@@ -47,7 +47,7 @@ class VesselDataset(Dataset):
             self.transform = Compose([Resize(size=(299,299), interpolation=2),
                                       RandomHorizontalFlip(p=0.5),
                                       RandomVerticalFlip(p=0.5),
-                                      RandomBlur(p=0.1, radius=2), # Low prob since Resize already downsamples
+                                      RandomBlur(p=0.5, radius=2),
                                       ToTensor(),])
         self.mode = mode
         
@@ -106,12 +106,15 @@ def validation(model, criterion, valid_loader):
     return metrics
 
 
-def main():
+def main(load_state_dict=False, state_dict=None):
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                             aux_logits=False)
+    if load_state_dict:
+        model.load_state_dict(torch.load(state_dict))
     #model = torchvision.models.resnet18(pretrained=False, progress=True, num_classes=2)
-    model = model.to('cuda')
+    device = torch.device('cuda')
+    model = model.to(device)
     
     criterion = nn.CrossEntropyLoss()
     
@@ -119,7 +122,7 @@ def main():
     weight_decay=1e-6
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     
-    ship_dir = 'airbus-ship-detection/'
+    ship_dir = '../data/airbus-ship-detection/'
     train_image_dir = os.path.join(ship_dir, 'train_v2/')
     valid_image_dir = os.path.join(ship_dir, 'train_v2/')
     masks = pd.read_csv(os.path.join(ship_dir,
@@ -205,7 +208,9 @@ def main():
     savepath = 'vessel_classifier_state_dict.pth'
     torch.save(model.state_dict(), savepath)
     print('Done.')
+
     
 if __name__ == '__main__':
-    main()
-    
+    load_state_dict = False
+    state_dict = r'../data/vessel_classifier_state_dict.pth'
+    main(load_state_dict, state_dict)

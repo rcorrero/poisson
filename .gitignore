@@ -12,6 +12,8 @@
 # Personal files #
 ##################
 /poisson/private/
+/poisson/notes/
+/poisson/dev/
 
 # ignore all . folders but include . files #
 ############################################
