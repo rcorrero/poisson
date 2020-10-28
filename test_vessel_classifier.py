@@ -188,11 +188,11 @@ class TestVesselClassifier(unittest.TestCase):
             print('[Epoch %d] Validation Accuracy: %.3f | Validation Loss: %.3f\n' %
                  ((epoch + 1), metrics['valid_acc'], metrics['valid_loss']))
             print('Saving Model...')
-            savepath = 'vessel_classifier_state_dict.pth'
+            savepath = '../data/test_vessel_classifier_state_dict.pth'
             torch.save(model.state_dict(), savepath)
         print('Finished Training.')
         print('Saving Model...')
-        savepath = 'vessel_classifier_state_dict.pth'
+        savepath = '../data/test_vessel_classifier_state_dict.pth'
         torch.save(model.state_dict(), savepath)
         print('Done.')
     
