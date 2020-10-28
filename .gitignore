@@ -6,14 +6,16 @@
 
 # Irrelevant background files #
 ###############################
-/meta/
+/dev/
+/notes/
+/notebooks/
 
 
-# Personal files #
+# Misc files #
 ##################
-/poisson/private/
-/poisson/notes/
-/poisson/dev/
+*.pth
+*.out
+
 
 # ignore all . folders but include . files #
 ############################################
