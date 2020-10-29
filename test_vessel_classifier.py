@@ -106,7 +106,7 @@ class TestVesselClassifier(unittest.TestCase):
                 else:
                     return img, img_file_name
 
-        ship_dir = '/dev/'
+        ship_dir = '../data/'
         train_image_dir = os.path.join(ship_dir, 'imgs/')
         valid_image_dir = os.path.join(ship_dir, 'imgs/')
         masks = pd.read_csv(os.path.join(ship_dir,'train_ship_segmentations_v2.csv'))
@@ -262,7 +262,7 @@ class TestVesselClassifier(unittest.TestCase):
         for epoch in range(num_epochs):  # loop over the dataset multiple times
             model.train()
             running_loss = 0.0
-            for i, data in enumerate(list(loader[0])):
+            for i, data in enumerate(loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
                 for j in range(100): # Overfit the sample
@@ -293,6 +293,7 @@ class TestVesselClassifier(unittest.TestCase):
                     print('           Estimated Hours Remaining: %.2f\n' % time_left)
                     running_loss = 0.0
                     minibatch_time = 0.0
+                break
             print('Epoch %d completed. Running validation...\n' % (epoch + 1))
             metrics = validation(model, criterion, valid_loader)
             print('[Epoch %d] Validation Accuracy: %.3f | Validation Loss: %.3f\n' %
