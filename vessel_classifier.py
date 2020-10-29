@@ -233,7 +233,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
 
     
 if __name__ == '__main__':
-    load_state_dict = True
+    load_state_dict = False
     loadpath = r'../data/vessel_classifier_state_dict.pth'
     savepath = r'vessel_classifier_state_dict.pth'
     main(savepath, load_state_dict, loadpath)
