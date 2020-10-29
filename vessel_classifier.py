@@ -127,6 +127,9 @@ def validation(model, criterion, valid_loader):
 
 
 def main(savepath, load_state_dict=False, state_dict=None):
+    seed = 0
+    torch.manual_seed(seed)
+    np.random.seed(seed)
     ImageFile.LOAD_TRUNCATED_IMAGES = True
     model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                             aux_logits=False)
@@ -151,6 +154,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
     train_ids, valid_ids = train_test_split(unique_img_ids, 
                      test_size = 0.01, 
                      stratify = unique_img_ids['counts'],
+                     random_state=seed
                     )
     print("Train Size: %d" % len(train_ids))
     print("Valid Size: %d" % len(valid_ids))
