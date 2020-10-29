@@ -139,7 +139,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
     criterion = nn.CrossEntropyLoss()
     
     lr = 1e-4
-    weight_decay=1e-6
+    weight_decay=1e-5 # Default should be 1e-5
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     
     ship_dir = '../data/airbus-ship-detection/'
@@ -233,7 +233,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
 
     
 if __name__ == '__main__':
-    load_state_dict = False
+    load_state_dict = True
     loadpath = r'../data/vessel_classifier_state_dict.pth'
     savepath = r'vessel_classifier_state_dict.pth'
     main(savepath, load_state_dict, loadpath)

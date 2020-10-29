@@ -106,9 +106,9 @@ class TestVesselClassifier(unittest.TestCase):
                 else:
                     return img, img_file_name
 
-        ship_dir = '../data/'
-        train_image_dir = os.path.join(ship_dir, 'imgs/')
-        valid_image_dir = os.path.join(ship_dir, 'imgs/')
+        ship_dir = '../data/airbus-ship-detection/'
+        train_image_dir = os.path.join(ship_dir, 'train_v2/')
+        valid_image_dir = os.path.join(ship_dir, 'train_v2/')
         masks = pd.read_csv(os.path.join(ship_dir,'train_ship_segmentations_v2.csv'))
         unique_img_ids = masks.groupby('ImageId').size().reset_index(name='counts')
         train_ids, valid_ids = train_test_split(
@@ -262,6 +262,7 @@ class TestVesselClassifier(unittest.TestCase):
         for epoch in range(num_epochs):  # loop over the dataset multiple times
             model.train()
             running_loss = 0.0
+            minibatch_time = 0.0
             for i, data in enumerate(loader):
                 inputs, labels = data
                 inputs, labels = Variable(inputs).cuda(), Variable(labels).cuda()
