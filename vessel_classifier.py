@@ -49,7 +49,7 @@ class VesselDataset(Dataset):
                 Resize(size=(299,299), interpolation=2),
                 RandomHorizontalFlip(p=0.5),
                 RandomVerticalFlip(p=0.5),
-                RandomBlur(p=0.5, radius=2),
+                RandomBlur(p=0.85, radius=2),
                 ToTensor(),
                 Normalize(mean, std) # Apply to all input images
             ])
@@ -142,7 +142,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
     criterion = nn.CrossEntropyLoss()
     
     lr = 1e-4
-    weight_decay=1e-5 # Default should be 1e-5
+    weight_decay = 1e-7 # Default should be 1e-5
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     
     ship_dir = '../data/airbus-ship-detection/'
@@ -217,6 +217,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
                 num_epochs_left = num_epochs - (epoch + 1)
                 time_left = minibatch_time * \
                     (num_minibatches_left + num_epochs_left * num_minibatches_per_epoch)
+                time_left *= 6.0 # Adjust for timing discrepencies
                 print('[%d, %5d] Running Loss: %.3f' %
                       (epoch + 1, i + 1, (running_loss / print_every)))
                 print('           Number of Samples Seen: %d' %
@@ -230,6 +231,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
              ((epoch + 1), metrics['valid_acc'], metrics['valid_loss']))
         print('Saving Model...\n')
         torch.save(model.state_dict(), savepath)
+        print('Model Saved.\n')
     print('Finished Training.\n')
     print('Saving Model...\n')
     torch.save(model.state_dict(), savepath)
@@ -237,7 +239,11 @@ def main(savepath, load_state_dict=False, state_dict=None):
 
     
 if __name__ == '__main__':
-    load_state_dict = False
+    # Changes:
+    #    - Increase percentage of training images blurred
+    #    - Decrease weight decay from 1e-5 to 1e-7
+    #    - Use state_dict from previous run
+    load_state_dict = True
     loadpath = r'../data/vessel_classifier_state_dict.pth'
     savepath = r'vessel_classifier_state_dict.pth'
     main(savepath, load_state_dict, loadpath)
