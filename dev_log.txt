@@ -1,0 +1,45 @@
+2020/11/1
+- Model completed 7 epochs with parameters
+    - learning rate = 1e-4
+    - beta 1 (Adam param.) = 0.9
+    - beta 2 (Adam param.) = 0.999
+    - weight decay = 1e-7 # Only change from previous training
+- Running Loss is steady around 0.82 but decreasing overall (slowly)
+- Accuracy on validation set after 20th iter. = 0.964
+
+Next Steps:
+    - Get some idea of a target performance level to determine when to finish training (e.g.):
+        - Create baseline model (e.g. SVM) and train — compare performance to trained model 
+	- Identify mislabeled samples
+        - Change hyperparameters according to best practices recs.
+    - Create dataset of classified PlanetScene images
+    - Test performance on dataset
+    - If the performance isn't acceptable then:
+	- Add transformations for training data to make more similar to target data
+	- Change hyperparams according to best practices
+	- Retrain model with PlanetScene samples — follow best practices for situations
+          where a model is fine-tuned on a much smaller dataset than the one on which
+	  it was originally trained.
+	- Repeat until model performs well enough
+    - Think about how to use the classification model with the object detection model. 
+      The previous object detection model used a ResNet50 architecture as its "backbone". 
+      Presumably we can do the same thing with our classification model.	
+
+
+2020/10/31
+- Vessel classifier is training. 
+- Model completed 13 epochs with parameters
+    - learning rate = 1e-4
+    - beta 1 (Adam param.) = 0.9
+    - beta 2 (Adam param.) = 0.999
+    - weight decay = 1e-5
+
+
+2020/10/29
+- Changed validation set to include only images blurred using Gaussian filter with
+  radius = 2. The PlanetScene images are of a lower spatial res. than almost all of 
+  the training samples and therefore the valid. set needs to include more blurred 
+  images.
+- Changed probability of Gaussian blur being applied to each training sample on ingest
+  from 0.1 to 0.5 for the same reason.
+- Started training
