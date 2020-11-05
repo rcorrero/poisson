@@ -1,11 +1,31 @@
+2020/11/5
+- Model has completed 5 epochs since restart (43 total)
+- Validation loss consistently decreasing but averaging higher than last validation loss
+  before restart, likely due to the fact that a different validation set was chosen on 
+  restart which the model finds more difficult. This resampling is an oversight on my
+  part, and because of this leakage between validation and training, these validation
+  metrics should only be used as a rough estimate of model performance.
+- Because valid loss is decreasing consistently it appears that the model still has
+  room for improvement.
+
+
+
+2020/11/4
+- Model completed 25 epochs since restart with smaller weight decay (38 overall)
+- Validation loss continuing to drop
+- Validation accuracy near 0.975 (moving average estimate - just a ballpark figure)
+
+Because the virtual machine restarted during the 26th epoch, I restarted training.
+
+
 2020/11/2
-- Model completed 13 epochs since restart with smaller weight decay (26 epochs overall)
+- Model completed 13 epochs since restart with smaller weight decay (27 epochs overall)
 - Validation loss continuing to drop; currently around 0.085
 - Change in validation loss per epoch continuing to decrease suggesting the model
   has almost converged
 
-I intend to let the model continue to train until validation loss begins to consistently increase, or until the model has completed 43 epochs overall (30 on this training
-session). The model is estimated to complete 43 epochs on or by 2020/11/5 at the current
+I intend to let the model continue to train until validation loss begins to consistently increase, or until the model has completed 44 epochs overall (30 on this training
+session). The model is estimated to complete 44 epochs on or by 2020/11/5 at the current
 pace.
 
 
@@ -39,7 +59,7 @@ Next Steps:
 
 2020/10/31
 - Vessel classifier is training. 
-- Model completed 13 epochs with parameters
+- Model completed 14 epochs with parameters
     - learning rate = 1e-4
     - beta 1 (Adam param.) = 0.9
     - beta 2 (Adam param.) = 0.999
