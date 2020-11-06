@@ -1,3 +1,11 @@
+2020/11/6
+- Model has completed 11 epochs since restart (49 total)
+- Validation loss slightly decreased over the 11 epochs but seems steady
+- Validation accuracy peaked at 0.98 on epoch 7 and hovered around 0.975
+  on the following epochs.
+- VM restarted after 11th epoch; IÕll restart training and see how that goes.
+
+
 2020/11/5
 - Model has completed 5 epochs since restart (43 total)
 - Validation loss consistently decreasing but averaging higher than last validation loss
@@ -7,7 +15,6 @@
   metrics should only be used as a rough estimate of model performance.
 - Because valid loss is decreasing consistently it appears that the model still has
   room for improvement.
-
 
 
 2020/11/4
