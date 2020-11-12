@@ -89,16 +89,13 @@ def make_test_loader():
     test_df = pd.merge(unique_img_ids, test_ids)
 
     binary = True
-    vessel_dataset = VesselDataset(train_df, train_image_dir=train_image_dir, 
-                                   mode='train', binary=binary)
-
     vessel_test_dataset = VesselDataset(test_df, test_image_dir=test_image_dir, 
                                    mode='test', binary=binary)
     
     batch_size = 64
     shuffle = False
     test_loader = DataLoader(
-                dataset=test_valid_dataset,
+                dataset=vessel_test_dataset,
                 shuffle=shuffle,
                 #num_workers = 0,
                 batch_size=batch_size,
