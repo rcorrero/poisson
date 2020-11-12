@@ -72,6 +72,7 @@ def test(model, criterion, test_loader):
 
 
 def make_test_loader():
+    seed = 0
     ship_dir = '../data/airbus-ship-detection/'
     test_image_dir = os.path.join(ship_dir, 'train_v2/')
     masks = pd.read_csv(os.path.join(ship_dir,
@@ -113,3 +114,5 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     test_loader = make_test_loader()
     metrics = test(model, criterion, test_loader)
+    for metric_name, metric_val in metrics.items():
+        print(metric_name, '\n', metric_val, '\n')
