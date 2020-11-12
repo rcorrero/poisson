@@ -1,3 +1,5 @@
+from vessel_classifier import *
+
 import os
 import time
 import torch
