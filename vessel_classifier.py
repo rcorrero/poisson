@@ -89,11 +89,7 @@ class VesselDataset(Dataset):
             img = self.valid_transform(img)
         else:
             img = self.test_transform(img)
-
-        if self.mode == 'train' or self.mode == 'valid':
-            return img, label
-        else:
-            return img, img_file_name
+        return img, label
 
         
 def binary_acc(outputs, labels):
