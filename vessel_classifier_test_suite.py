@@ -26,20 +26,26 @@ def binary_acc(outputs, labels):
 
 
 def calculate_precision(outputs, labels):
+    labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
-    precision = precision_score(outputs, preds)
+    preds = preds.cpu().numpy()
+    precision = precision_score(labels, preds)
     return precision
 
 
 def calculate_recall(outputs, labels):
+    labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
-    recall = recall_score(outputs, preds)
+    preds = preds.cpu().numpy()
+    recall = recall_score(labels, preds)
     return recall
 
 
 def make_confusion_matrix(outputs, labels):
+    labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
-    confusion = confusion_matrix(labels, outputs)
+    preds = preds.cpu().numpy()
+    confusion = confusion_matrix(labels, preds)
     return confusion
 
 
