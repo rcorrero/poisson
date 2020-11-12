@@ -110,6 +110,8 @@ if __name__ == '__main__':
     model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                             aux_logits=False)
     model.load_state_dict(torch.load(state_dict))
+    device = torch.device('cuda')
+    model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     test_loader = make_test_loader()
     metrics = test(model, criterion, test_loader)
