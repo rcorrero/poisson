@@ -120,6 +120,8 @@ if __name__ == '__main__':
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     test_loader = make_test_loader()
+    print("Running test...")
     metrics = test(model, criterion, test_loader)
+    print("Done.\n")
     for metric_name, metric_val in metrics.items():
         print(metric_name, '\n', metric_val, '\n')
