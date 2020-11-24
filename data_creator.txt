@@ -1,0 +1,9 @@
+This script allows for the segmentation of raster files into tiles, and the labeling of these tiles according to the presence or absence of vessels within them. The control flow is this:
+- Raster files are downloaded from Google Cloud Storage
+- Raster files are reincoded to use byte-data
+- Re-incoded files are tiled; tiles are saved to disk
+- Each tile is presented to the user in the command line; the user then selectes whether to label that tile as containing a vessel ([y]es), not containing a vessel ([n]o), or to ignore that tile
+- Tiles that are labeled are then placed into one of two directories according to the assigned label. Those with a positive label are placed in the positive directory, and vice-versa.
+- Then contents of each directory are then uploaded to one of two Google Cloud Storage directories containing positive and negative samples according to the assigned label.
+
+Once the samples have been uploaded to google cloud storage, the contents of the two directories may be downloaded to the VM instance, where positives and negatives may both be placed 
