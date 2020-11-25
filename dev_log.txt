@@ -1,3 +1,7 @@
+2020/11/24
+- I created a test dataset containing image tiles segmented from PlanetScene images of Chimbote. Approximately 10% of the samples contain images, and the dataset poses an extreme challange for the algorithm.
+- Updated vessel_classifier_test_suite.py to use test images.
+
 2020/11/11
 - Model has completed 30 epochs since restart (79 overall)
 - Validation loss stabilized at roughly 0.05 to 0.07

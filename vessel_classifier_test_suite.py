@@ -49,6 +49,69 @@ def make_confusion_matrix(outputs, labels):
     return confusion
 
 
+class VesselDataset(Dataset):
+    def __init__(self, img_df, train_image_dir=None, valid_image_dir=None, 
+                 test_image_dir=None, transform=None, mode='train', binary=True):
+        self.image_ids = img_df['sample_id'].tolist()
+        if binary:
+            self.image_labels = img_df['label'].tolist()
+        else:
+            self.image_labels = list(img_df.counts - 1) # Image with no mask has 'count' == 1 in df
+        self.train_image_dir = train_image_dir
+        self.valid_image_dir = valid_image_dir
+        self.test_image_dir = test_image_dir
+
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
+        if transform is not None:
+            self.train_transform = transform
+        else:
+            self.train_transform = Compose([
+                Resize(size=(299,299), interpolation=2),
+                RandomHorizontalFlip(p=0.5),
+                RandomVerticalFlip(p=0.5),
+                RandomBlur(p=0.85, radius=2),
+                ToTensor(),
+                Normalize(mean, std) # Apply to all input images
+            ])
+        self.valid_transform = Compose([
+            Resize(size=(299,299), interpolation=2),
+            RandomBlur(p=1.0, radius=2), # Blur all images
+            ToTensor(),
+            Normalize(mean, std) # Apply to all input images
+        ])
+        self.test_transform = Compose([
+            ToTensor(),
+            Normalize(mean, std) # Apply to all input images
+        ])
+        self.mode = mode
+
+
+    def __len__(self):
+        return len(self.image_ids)
+
+
+    def __getitem__(self, idx):
+        img_file_name = self.image_ids[idx]
+        if self.mode == 'train':
+            img_path = os.path.join(self.train_image_dir, img_file_name)
+        elif self.mode == 'valid':
+            img_path = os.path.join(self.valid_image_dir, img_file_name)
+        else:
+            img_path = os.path.join(self.test_image_dir, img_file_name)
+
+        #img = imread(img_path)
+        img = Image.open(img_path)
+        label = self.image_labels[idx]
+        if self.mode =='train':
+            img = self.train_transform(img)
+        elif self.mode == 'valid':
+            img = self.valid_transform(img)
+        else:
+            img = self.test_transform(img)
+        return img, label
+
+
 def test(model, criterion, test_loader):
     model.eval()
     losses = []
@@ -81,18 +144,10 @@ def test(model, criterion, test_loader):
 
 def make_test_loader():
     seed = 0
-    ship_dir = '../data/airbus-ship-detection/'
-    test_image_dir = os.path.join(ship_dir, 'train_v2/')
-    masks = pd.read_csv(os.path.join(ship_dir,
-                                     'train_ship_segmentations_v2.csv'))
-    unique_img_ids = masks.groupby('ImageId').size().reset_index(name='counts')
-    _, test_ids = train_test_split(unique_img_ids, 
-                     test_size = 0.01, 
-                     stratify = unique_img_ids['counts'],
-                     random_state=seed
-                    )
-    print("Test Size: %d" % len(test_ids))
-    test_df = pd.merge(unique_img_ids, test_ids)
+    ship_dir = '../data/test/'
+    test_image_dir = os.path.join(ship_dir, 'imgs/')
+    print("Test Size: %d" % len(labels['sample_id'].tolist()))
+    test_df = labels
 
     binary = True
     vessel_test_dataset = VesselDataset(test_df, test_image_dir=test_image_dir, 
