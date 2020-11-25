@@ -146,7 +146,7 @@ def make_test_loader():
     seed = 0
     ship_dir = '../data/test/'
     test_image_dir = os.path.join(ship_dir, 'imgs/')
-    labels = pd.read_csv(os.path.join(ship_dir, 'labels.csv')
+    labels = pd.read_csv(os.path.join(ship_dir, 'labels.csv'))
     print("Test Size: %d" % len(labels['sample_id'].tolist()))
     test_df = labels
 
