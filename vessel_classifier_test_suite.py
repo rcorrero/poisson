@@ -94,7 +94,7 @@ class VesselDataset(Dataset):
         ])
         self.test_transform = Compose([
             ToTensor(),
-            Normalize(mean, std) # Apply to all input images
+#            Normalize(mean, std) # Apply to all input images
         ])
         self.mode = mode
 
