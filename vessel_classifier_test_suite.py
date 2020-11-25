@@ -1,5 +1,3 @@
-from vessel_classifier import *
-
 import os
 import time
 import torch
@@ -45,8 +43,8 @@ def make_confusion_matrix(outputs, labels):
     labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
     preds = preds.cpu().numpy()
-    print(labels)
     confusion = confusion_matrix(labels, preds)
+    print(confusion)
     return confusion
 
 
