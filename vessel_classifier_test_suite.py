@@ -27,7 +27,7 @@ def calculate_precision(outputs, labels):
     labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
     preds = preds.cpu().numpy()
-    precision = precision_score(labels, preds)
+    precision = precision_score(labels, preds, zero_division=1)
     return precision
 
 
@@ -35,7 +35,7 @@ def calculate_recall(outputs, labels):
     labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
     preds = preds.cpu().numpy()
-    recall = recall_score(labels, preds)
+    recall = recall_score(labels, preds, zero_division=1)
     return recall
 
 
