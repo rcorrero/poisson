@@ -81,6 +81,7 @@ class VesselDataset(Dataset):
             Normalize(mean, std) # Apply to all input images
         ])
         self.test_transform = Compose([
+            Resize(size=(299,299), interpolation=2),
             ToTensor(),
             Normalize(mean, std) # Apply to all input images
         ])
