@@ -43,7 +43,7 @@ def make_confusion_matrix(outputs, labels):
     labels = labels.cpu().numpy()
     preds = torch.argmax(outputs, axis=1)
     preds = preds.cpu().numpy()
-    confusion = confusion_matrix(labels, preds)
+    confusion = confusion_matrix(labels, preds, labels=[0,1])
     print(confusion)
     return confusion
 
