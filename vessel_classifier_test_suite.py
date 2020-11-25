@@ -48,6 +48,19 @@ def make_confusion_matrix(outputs, labels):
     return confusion
 
 
+class RandomBlur:
+    def __init__(self, p=0.5, radius=2):
+        self.p = p
+        self.radius = radius
+
+        
+    def __call__(self, x):
+        prob = np.random.rand(1)[0]
+        if prob < self.p:
+            x = x.filter(ImageFilter.GaussianBlur(self.radius))
+        return x
+
+
 class VesselDataset(Dataset):
     def __init__(self, img_df, train_image_dir=None, valid_image_dir=None, 
                  test_image_dir=None, transform=None, mode='train', binary=True):
