@@ -98,7 +98,7 @@ class VesselDataset(Dataset):
         elif self.mode == 'valid':
             img_path = os.path.join(self.valid_image_dir, img_file_name)
         else:
-            img_path = os.path.join(self.test_image_dir, img_file_name)
+            img_path = os.path.join(self.test_image_dir, img_file_name, '.jpg')
 
         #img = imread(img_path)
         img = Image.open(img_path)
