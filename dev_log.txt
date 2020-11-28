@@ -1,6 +1,26 @@
+2020/11/27
+The next step is to use the vessel classification model as a backbone for a vessel
+detection model. Ex ante I believe that the target architecture should include the 
+following features:
+- YOLO image segmentation
+- InceptionV3 backbone (the trained classification model)
+
+
+2020/11/25
+- Using the test dataset containing 520 images, I tested the classification
+  model. Model generated 0 false positives and identified 12 of the 54 images 
+  containing vessels. Because the test data comes from the same distribution as
+  target data, it appears likely that the true positive rate will dominate the 
+  false positive rate in use, therefore allowing for the derivation of population-
+  level results concerning the target vessel fleets.
+
+
 2020/11/24
-- I created a test dataset containing image tiles segmented from PlanetScene images of Chimbote. Approximately 10% of the samples contain images, and the dataset poses an extreme challange for the algorithm.
+- I created a test dataset containing image tiles segmented from PlanetScene images 
+  of Chimbote. Approximately 10% of the samples contain images, and the dataset poses 
+  an extreme challange for the algorithm.
 - Updated vessel_classifier_test_suite.py to use test images.
+
 
 2020/11/11
 - Model has completed 30 epochs since restart (79 overall)
@@ -37,7 +57,8 @@ Because the virtual machine restarted during the 26th epoch, I restarted trainin
 - Change in validation loss per epoch continuing to decrease suggesting the model
   has almost converged
 
-I intend to let the model continue to train until validation loss begins to consistently increase, or until the model has completed 44 epochs overall (30 on this training
+I intend to let the model continue to train until validation loss begins to consistently increase, 
+or until the model has completed 44 epochs overall (30 on this training
 session). The model is estimated to complete 44 epochs on or by 2020/11/5 at the current
 pace.
 

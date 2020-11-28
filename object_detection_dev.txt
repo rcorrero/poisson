@@ -1,0 +1,53 @@
+"A modern detector is usually composed of two parts,
+a backbone which is pre-trained on ImageNet and a head
+which is used to predict classes and bounding boxes of objects" [1].
+
+"As to the head part, it is usually categorized into two kinds, i.e., one-stage 
+object detector and two-stage object detector" [1].
+
+"Object detectors developed in recent years often insert some layers between 
+backbone and head, and these layers are usually used to collect feature maps 
+from different stages. We can call it the neck of an object detector" [1].
+
+Thus the object detection model consists of three main parts:
+- Backbone (InceptionV3 with pretrained weights)
+- Neck (optional)
+- Head.
+
+The neck acts as an adapter between the backbone and the head.
+ 
+Using a pretrained InceptionV3 backbone with a sparse-prediction (two-stage) head
+is relatively simple in pytorch. The code to load an InceptionV3 model and use
+it as a backbone is:
+
+```
+# Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
+def make_model(state_dict, num_classes):
+        inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
+                                                    num_classes=num_classes, aux_logits=False)
+        inception.load_state_dict(torch.load(state_dict))
+        modules = list(inception.children())[:-1]
+        backbone = nn.Sequential(*modules)
+
+        for layer in backbone:
+            for p in layer.parameters():
+                p.requires_grad = False # Freezes the backbone layers
+
+        backbone.out_channels = 2048
+
+        anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
+                                           aspect_ratios=((0.5, 1.0, 2.0),))
+
+        model = FasterRCNN(backbone, rpn_anchor_generator=anchor_generator,
+                           box_predictor=FastRCNNPredictor(1024, num_classes))
+
+        return model
+```
+
+As it now stands the code is nearly functional. It lacks
+- A downsampling method to convert from arbitrary input image/RLE size to 299x299.
+
+The `rel_decode` function needs to be modified to convert image sizes and RLE sizes.
+
+References
+1. https://arxiv.org/pdf/2004.10934.pdf
