@@ -1,9 +1,7 @@
 2020/11/27
 The next step is to use the vessel classification model as a backbone for a vessel
-detection model. Ex ante I believe that the target architecture should include the 
-following features:
-- YOLO image segmentation
-- InceptionV3 backbone (the trained classification model)
+detection model. I began writing the script `vessel_detector.py` which contains
+the code for the model.
 
 
 2020/11/25
@@ -13,6 +11,11 @@ following features:
   target data, it appears likely that the true positive rate will dominate the 
   false positive rate in use, therefore allowing for the derivation of population-
   level results concerning the target vessel fleets.
+- It seems useful to test methods for improving model performance using imagery
+  generated from PlanetScene imagery. One potential avenue for development is 
+  make a training dataset containing approximately 1000 tiles from PlanetScene
+  images and retrain the model on this set, using appropriate hyperparameters to
+  account for the small dataset size.
 
 
 2020/11/24
