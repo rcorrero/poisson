@@ -176,6 +176,10 @@ class VesselDataset(Dataset):
         return len(self.image_ids)
 
 
+    def _transform(self, target, boxes, area):
+        # Calculate areas of ta
+
+
     def __getitem__(self, idx):
         img_file_name = self.image_ids[idx]
         if self.mode == 'train':
@@ -206,6 +210,7 @@ class VesselDataset(Dataset):
             
         label = self.image_labels[idx]
         target = make_target(label, N, shape=(299,299))
+        img, target['boxes'], target['area'] = self._transform(img, target['boxes'], target['area'])
         image_id = torch.tensor([idx])
         target["image_id"] = image_id
         
