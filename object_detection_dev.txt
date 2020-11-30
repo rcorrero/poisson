@@ -1,0 +1,161 @@
+"A modern detector is usually composed of two parts,
+a backbone which is pre-trained on ImageNet and a head
+which is used to predict classes and bounding boxes of objects" [1].
+
+"As to the head part, it is usually categorized into two kinds, i.e., one-stage 
+object detector and two-stage object detector" [1].
+
+"Object detectors developed in recent years often insert some layers between 
+backbone and head, and these layers are usually used to collect feature maps 
+from different stages. We can call it the neck of an object detector" [1].
+
+Thus the object detection model consists of three main parts:
+- Backbone (InceptionV3 with pretrained weights)
+- Neck (optional)
+- Head.
+
+The neck acts as an adapter between the backbone and the head.
+ 
+Using a pretrained InceptionV3 backbone with a sparse-prediction (two-stage) head
+is relatively simple in pytorch. The code to load an InceptionV3 model and use
+it as a backbone is:
+
+```
+# Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
+def make_model(state_dict, num_classes):
+        inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
+                                                    num_classes=num_classes, aux_logits=False)
+        inception.load_state_dict(torch.load(state_dict))
+        modules = list(inception.children())[:-1]
+        backbone = nn.Sequential(*modules)
+
+        for layer in backbone:
+            for p in layer.parameters():
+                p.requires_grad = False # Freezes the backbone layers
+
+        backbone.out_channels = 2048
+
+        anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
+                                           aspect_ratios=((0.5, 1.0, 2.0),))
+
+        model = FasterRCNN(backbone, rpn_anchor_generator=anchor_generator,
+                           box_predictor=FastRCNNPredictor(1024, num_classes))
+
+        return model
+```
+
+Because we need a model which is scale-invariant, being trained on images of varying spatial resolution, 
+we need to choose system components which allow for invariance in scale. Based on [1] and [2] I believe 
+that an appropriate architecture has the following components:
+- Backbone: pretrained InceptionV3
+- Neck: FPN 
+- Head: YoloV2/YoloV3
+
+Scale invariance may be unnecessary if instead we intelligently tile the images into patches,
+then feed these patches into the object detection model. We may then recombine these patches into
+a prediction mask for the entire input image. By using a suitable margin, and by using an array
+(mask) as the prediction which covers the entire input image, we may avoid complex recombination
+and bounding box filtering which would be necessary otherwise. The code may look something like 
+this:
+
+```
+# From: https://github.com/lopuhin/kaggle-dstl/blob/b1d3a518bbbd3503bdf07400841183d2386fd158/train.py#L552
+    def predict_image_mask(self, im_data: np.ndarray,
+                           rotate: bool=False,
+                           no_edges: bool=False,
+                           average_shifts: bool=True
+                           ) -> np.ndarray:
+        self.net.eval()
+        c, w, h = im_data.shape
+        b = self.hps.patch_border
+        s = self.hps.patch_inner
+        padded = np.zeros([c, w + 2 * b, h + 2 * b], dtype=im_data.dtype)
+        padded[:, b:-b, b:-b] = im_data
+        # mirror on the edges
+        padded[:, :b, b:-b] = np.flip(im_data[:, :b, :], 1)
+        padded[:, -b:, b:-b] = np.flip(im_data[:, -b:, :], 1)
+        padded[:, :, :b] = np.flip(padded[:, :, b: 2 * b], 2)
+        padded[:, :, -b:] = np.flip(padded[:, :, -2 * b: -b], 2)
+        step = s // 3 if average_shifts else s
+        margin = b if no_edges else 0
+        xs = list(range(margin, w - s - margin, step)) + [w - s - margin]
+        ys = list(range(margin, h - s - margin, step)) + [h - s - margin]
+        all_xy = [(x, y) for x in xs for y in ys]
+        out_shape = [self.hps.n_classes, w, h]
+        pred_mask = np.zeros(out_shape, dtype=np.float32)
+        pred_per_pixel = np.zeros(out_shape, dtype=np.int16)
+        n_rot = 4 if rotate else 1
+
+        def gen_batch(xy_batch_):
+            inputs_ = []
+            for x, y in xy_batch_:
+                # shifted by -b to account for padding
+                patch = padded[:, x: x + s + 2 * b, y: y + s + 2 * b]
+                inputs_.append(patch)
+                for i in range(1, n_rot):
+                    inputs_.append(utils.rotated(patch, i * 90))
+            return xy_batch_, np.array(inputs_, dtype=np.float32)
+
+        for xy_batch, inputs in utils.imap_fixed_output_buffer(
+                gen_batch, tqdm.tqdm(list(
+                    utils.chunks(all_xy, self.hps.batch_size // (4 * n_rot)))),
+                threads=2):
+            y_pred = self.net(self._var(torch.from_numpy(inputs)))
+            for idx, mask in enumerate(y_pred.data.cpu().numpy()):
+                x, y = xy_batch[idx // n_rot]
+                i = idx % n_rot
+                if i:
+                    mask = utils.rotated(mask, -i * 90)
+                # mask = (mask >= 0.5) + 0.001
+                pred_mask[:, x: x + s, y: y + s] += mask / n_rot
+                pred_per_pixel[:, x: x + s, y: y + s] += 1
+        if not no_edges:
+            assert pred_per_pixel.min() >= 1
+        pred_mask /= np.maximum(pred_per_pixel, 1)
+        return pred_mask
+```
+
+From the prediction mask bounding boxes may be generated identifying connected regions of the mask and
+deriving the largest rectangle which fits within a positive region for each of the regions. This may done as follows:
+
+```
+# From: https://www.kaggle.com/voglinio/from-masks-to-bounding-boxes
+import cv2
+from skimage.measure import label, regionprops
+for i in range(10):
+    image = images_with_ship[i]
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize = (15, 5))
+    img_0 = cv2.imread(train_image_dir+'/' + image)
+    rle_0 = masks.query('ImageId=="'+image+'"')['EncodedPixels']
+    mask_0 = masks_as_image(rle_0)
+    lbl_0 = label(mask_0) 
+    props = regionprops(lbl_0)
+    img_1 = img_0.copy()
+    print ('Image', image)
+    for prop in props:
+        print('Found bbox', prop.bbox)
+        cv2.rectangle(img_1, (prop.bbox[1], prop.bbox[0]), (prop.bbox[3], prop.bbox[2]), (255, 0, 0), 2)
+```
+
+TODO
+- Implement head and code to combine with backbone into a single model.
+- Implement data loader which properly formats train/val/test imagery and targets for training.
+  This includes downsampling from training sample size of 768x768 to 299x299. This may be done by
+  splitting the training images into overlapping tiles in the same manner as will be done with the
+  test imagery.
+- Implement image tiler which splits test images and masks into overlapping tiles, inputs these
+  tiles into the trained object detection model which outputs prediction masks, and combines the 
+  predictions masks into a single mask for the entire image.
+- Implement method to extract bounding boxes from mask. Use this with training data to avoid
+  headaches when tiling taining images.
+- Rewrite training and validation code to handle new target type and the criterion, which is
+  different for object detection as opposed to classification.
+- Choose appropriate criterion and implement.
+- Decide whether a learning rate scheduler is appropriate.
+
+
+
+References
+1. https://arxiv.org/pdf/2004.10934.pdf
+2. https://arxiv.org/pdf/1807.05511.pdf
