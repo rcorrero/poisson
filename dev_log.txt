@@ -1,6 +1,7 @@
 2020/11/24
 - I created a test dataset containing image tiles segmented from PlanetScene images of Chimbote. Approximately 10% of the samples contain images, and the dataset poses an extreme challange for the algorithm.
 - Updated vessel_classifier_test_suite.py to use test images.
+- Model performed extremely well on test imagery: attained a precision score of 1.000 and a recall of 0.267, which is much better than I expected considering the difficulty of the imagery.
 
 2020/11/11
 - Model has completed 30 epochs since restart (79 overall)
