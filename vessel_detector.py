@@ -102,7 +102,7 @@ def make_target(in_mask_list, N, shape=(768, 768)):
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
-        target["masks"] = torch.from_numpy(np.zeros((N, shape[0], shape[1]), dtype=np.uint8)) 
+        target["masks"] = torch.from_numpy(np.zeros((1, shape[0], shape[1]), dtype=np.uint8)) 
         target["area"] = torch.zeros((0,), dtype=torch.int64)
         target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
         return target
@@ -206,7 +206,7 @@ class Resize:
         
     def __call__(self, image, target) -> Tuple[torch.tensor, dict]:
         image = resize(image, size=self.output_shape, interpolation=self.interpolation)
-        target['masks'] = resize(transforms.ToPILImage()(target['masks']), size=self.output_shape,
+        target['masks'] = resize(target['masks'], size=self.output_shape,
                                 interpolation=self.interpolation)
         target['boxes'] = self.resize_boxes(target['boxes'])
         return image, target
