@@ -11,7 +11,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision import transforms
-from torchvision.models.detection.anchor_utils import AnchorGenerator
+from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.models.detection.faster_rcnn import FasterRCNN, FastRCNNPredictor
 from torchvision.transforms import ToTensor, Compose, RandomHorizontalFlip,\
     RandomVerticalFlip,  Normalize
