@@ -287,10 +287,10 @@ class VesselDataset(Dataset):
 
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
-def make_model(state_dict, num_classes):
+def make_model(state_dict=None, num_classes=2):
         inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
-        inception.load_state_dict(torch.load(state_dict))
+        #inception.load_state_dict(torch.load(state_dict))
         modules = list(inception.children())[:-1]
         backbone = nn.Sequential(*modules)
 
@@ -317,17 +317,16 @@ def main(savepath, backbone_state_dict=None):
 
     model = make_model(backbone_state_dict, num_classes=2)
     
-    device = torch.device('cuda')
+    device = torch.device('cpu')
     model = model.to(device)
-
-    # Params from: https://arxiv.org/pdf/1506.01497.pdf
-    lr = 1e-3
-    weight_decay = 0.0005 # Default should be 1e-5
-    optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     
-    ship_dir = '../data/airbus-ship-detection/'
-    train_image_dir = os.path.join(ship_dir, 'train_v2/')
-    valid_image_dir = os.path.join(ship_dir, 'train_v2/')
+    lr = 1e-4
+    weight_decay = 1e-7 # Default should be 1e-5
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    
+    ship_dir = '../dev/'
+    train_image_dir = os.path.join(ship_dir, 'imgs/')
+    valid_image_dir = os.path.join(ship_dir, 'imgs/')
     masks = get_masks(ship_dir, train_image_dir, valid_image_dir)
     image_names, filtered_masks = filter_masks(masks)
     train_ids, train_masks, valid_ids, valid_masks = get_train_valid_dfs(

@@ -44,9 +44,7 @@ def make_model(state_dict, num_classes):
         return model
 ```
 
-Because we need a model which is scale-invariant, being trained on images of varying spatial resolution, 
-we need to choose system components which allow for invariance in scale. Based on [1] and [2] I believe 
-that an appropriate architecture has the following components:
+Because we need a model which is scale-invariant, being trained on images of varying spatial resolution, we need to choose system components which allow for invariance in scale. Based on [1] and [2] I believe that an appropriate architecture has the following components:
 - Backbone: pretrained InceptionV3
 - Neck: FPN 
 - Head: YoloV2/YoloV3
