@@ -476,11 +476,11 @@ def main(savepath, backbone_state_dict=None):
     print('Starting Training...\n')
     for epoch in range(num_epochs):  # loop over the dataset multiple times
 #####################################################################################        
-#        train_one_epoch(model, optimizer, data_loader, device, epoch, lr_scheduler = None, 
+#        train_one_epoch(model, optimizer, loader, device, epoch, lr_scheduler = None, 
 #                        print_every = 100, num_epochs = 30)
 #####################################################################################
         print('Epoch %d completed. Running validation...\n' % (epoch + 1))
-        metrics = evaluate(model, data_loader, device)
+        metrics = evaluate(model, valid_loader, device)
         print('Saving Model...\n')
         torch.save(model.state_dict(), savepath)
         print('Model Saved.\n')
