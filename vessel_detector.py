@@ -102,19 +102,30 @@ def make_target(in_mask_list, N, shape=(768, 768)):
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
+        target["area"] = torch.zeros((0,), dtype=torch.int64)
+        target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
         return target
-    bbox_array = np.zeros((N, 4), dtype=np.float32)
+    bbox_array = np.empty((N, 4), dtype=np.float32)
+    masks = np.empty((N, shape[0], shape[1]), dtype=np.uint8)
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
-#        if isinstance(rle, str):
+        #if isinstance(rle, str):
         # bbox = tuple(x1, y1, x2, y2)
         bbox = rle2bbox(rle, shape)
         bbox_array[i,:] = bbox
+        mask = rle_decode(rle)
+        masks[i, :, :] = mask
         i += 1
+    areas = (bbox_array[:, 3] - bbox_array[:, 1]) * (bbox_array[:, 2] - bbox_array[:, 0])
+    # suppose all instances are not crowd
+    is_crowd = torch.zeros((N,), dtype=torch.int64)
     target = {
         'boxes': torch.from_numpy(bbox_array),
         'labels': labels,
+        'masks': torch.from_numpy(masks),
+        'area': torch.from_numpy(areas),
+        'iscrowd': is_crowd
     }
     return target
 
