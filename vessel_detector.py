@@ -206,7 +206,7 @@ class Resize:
         
     def __call__(self, image, target) -> Tuple[torch.tensor, dict]:
         image = resize(image, size=self.output_shape, interpolation=self.interpolation)
-        target['masks'] = resize(target['masks'], size=self.output_shape,
+        target['masks'] = resize(transforms.ToPILImage(target['masks']), size=self.output_shape,
                                 interpolation=self.interpolation)
         target['boxes'] = self.resize_boxes(target['boxes'])
         return image, target
