@@ -157,7 +157,7 @@ def filter_masks(masks: pd.DataFrame) -> Tuple[dict, dict]:
     return image_names, image_masks
         
 
-def get_train_valid_dfs(masks: dict, seed: int = 0) -> Tuple[list, list, list, list]:
+def get_train_valid_dfs(masks: dict, seed: int = 0) -> Tuple[list, dict, list, dict]:
     ids = np.array(list(masks.keys())).reshape((len(masks),1))
     train_ids, valid_ids = train_test_split(
          ids, 
@@ -165,8 +165,8 @@ def get_train_valid_dfs(masks: dict, seed: int = 0) -> Tuple[list, list, list, l
          random_state=seed
         )
     train_ids, valid_ids = list(train_ids.flatten()), list(valid_ids.flatten())
-    train_masks = [masks[idx] for idx in train_ids]
-    valid_masks = [masks[idx] for idx in valid_ids]
+    train_masks = {idx: masks[idx] for idx in train_ids}
+    valid_masks = {idx: masks[idx] for idx in valid_ids}
     return train_ids, train_masks, valid_ids, valid_masks
 
 
