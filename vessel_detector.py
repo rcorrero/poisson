@@ -97,7 +97,7 @@ def is_valid(rle, shape=(768,768)):
     return False
 
 
-def make_target(in_mask_list, N, shape=(768, 768), null_mask_shape=(299,299):
+def make_target(in_mask_list, N, shape=(768, 768), null_mask_shape=(299,299)):
     if N == 0:
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
