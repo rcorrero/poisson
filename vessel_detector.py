@@ -102,11 +102,12 @@ def make_target(in_mask_list, N, shape=(768, 768)):
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
+        target["masks"] = torch.from_numpy(np.zeros((N, shape[0], shape[1]), dtype=np.uint8)) 
         target["area"] = torch.zeros((0,), dtype=torch.int64)
         target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
         return target
-    bbox_array = np.empty((N, 4), dtype=np.float32)
-    masks = np.empty((N, shape[0], shape[1]), dtype=np.uint8)
+    bbox_array = np.zeros((N, 4), dtype=np.float32)
+    masks = np.zeros((N, shape[0], shape[1]), dtype=np.uint8)
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
