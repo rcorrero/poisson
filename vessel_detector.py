@@ -111,13 +111,13 @@ def make_target(in_mask_list, N, shape=(768, 768)):
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
-        #if isinstance(rle, str):
-        # bbox = tuple(x1, y1, x2, y2)
-        bbox = rle2bbox(rle, shape)
-        bbox_array[i,:] = bbox
-        mask = rle_decode(rle)
-        masks[i, :, :] = mask
-        i += 1
+        if isinstance(rle, str):
+            # bbox = tuple(x1, y1, x2, y2)
+            bbox = rle2bbox(rle, shape)
+            bbox_array[i,:] = bbox
+            mask = rle_decode(rle)
+            masks[i, :, :] = mask
+            i += 1
     areas = (bbox_array[:, 3] - bbox_array[:, 1]) * (bbox_array[:, 2] - bbox_array[:, 0])
     # suppose all instances are not crowd
     is_crowd = torch.zeros((N,), dtype=torch.int64)
