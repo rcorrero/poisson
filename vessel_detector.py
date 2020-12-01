@@ -72,7 +72,7 @@ def rle2bbox(rle, shape):
 
 
 # From: https://www.kaggle.com/paulorzp/run-length-encode-and-decode
-def rle_decode(mask_rle, shape=(299, 768)):
+def rle_decode(mask_rle, shape=(768, 768)):
     '''
     mask_rle: run-length as string formated (start length)
     shape: (height,width) of array to return 
@@ -205,6 +205,8 @@ class Resize:
         
     def __call__(self, image, target) -> Tuple[torch.tensor, dict]:
         image = resize(image, size=self.output_shape, interpolation=self.interpolation)
+        target['mask'] = resize(target['mask'], size=self.output_shape,
+                                interpolation=self.interpolation)
         target['boxes'] = self.resize_boxes(target['boxes'])
         return image, target
     
