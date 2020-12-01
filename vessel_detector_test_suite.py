@@ -22,9 +22,10 @@ import pathlib
 from typing import Callable, Iterator, Union, Optional, List, Tuple, Dict
 from torchvision.transforms.functional import resize
 
-import utils
-import transforms as T
-from engine import train_one_epoch, evaluate
+import pycocotools
+from coco_utils import *
+from coco_eval import *
+
 
 
 def rle2bbox(rle, shape):
@@ -102,14 +103,14 @@ def make_target(in_mask_list, N, shape=(768, 768)):
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
         return target
-    bbox_array = np.empty((N, 4), dtype=np.float32)
+    bbox_array = np.zeros((N, 4), dtype=np.float32)
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
-        if isinstance(rle, str):
-            # bbox = tuple(x1, y1, x2, y2)
-            bbox = rle2bbox(rle, shape)
-            bbox_array[i,:] = bbox
+#        if isinstance(rle, str):
+        # bbox = tuple(x1, y1, x2, y2)
+        bbox = rle2bbox(rle, shape)
+        bbox_array[i,:] = bbox
         i += 1
     target = {
         'boxes': torch.from_numpy(bbox_array),
@@ -212,8 +213,9 @@ class RandomBlur:
     
 class VesselDataset(Dataset):
     def __init__(self, 
-                 boxes: Optional[list], 
-                 image_names: list, 
+                 boxes: dict, 
+                 image_ids: list,
+                 image_names: dict, 
                  train_image_dir=None, 
                  valid_image_dir=None, 
                  test_image_dir=None, 
@@ -221,6 +223,7 @@ class VesselDataset(Dataset):
                  mode='train', 
                  binary=True):
         self.boxes = boxes
+        self.image_ids = image_ids
         self.image_names = image_names
         self.train_image_dir = train_image_dir
         self.valid_image_dir = valid_image_dir
@@ -250,10 +253,11 @@ class VesselDataset(Dataset):
 
 
     def __len__(self):
-        return len(self.boxes)
+        return len(self.image_ids)
 
 
     def __getitem__(self, idx):
+        idx = self.image_ids[idx] # Convert from input to image ID number
         img_file_name = self.image_names[idx]
         if self.mode == 'train':
             img_path = os.path.join(self.train_image_dir, img_file_name)
@@ -284,7 +288,7 @@ class VesselDataset(Dataset):
         else:
             img = self.test_transform(img)
             return img
-
+        
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
 def make_model(state_dict=None, num_classes=2):
@@ -309,20 +313,121 @@ def make_model(state_dict=None, num_classes=2):
         return model
 
 
-def main(savepath, backbone_state_dict=None):
+def train_print(running_loss, 
+                print_every, 
+                batch_size, 
+                epoch, 
+                num_minibatches_per_epoch, 
+                time_left):
+    print('[%d, %5d] Running Loss: %.3f' %
+          (epoch + 1, i + 1, (running_loss / print_every)))
+    print('           Number of Samples Seen: %d' %
+          (batch_size * ((i + 1) + epoch * num_minibatches_per_epoch)))
+    print('           Estimated Hours Remaining: %.2f\n' % time_left)
+
+
+def train_one_epoch(model, 
+                    optimizer, 
+                    data_loader, 
+                    device, 
+                    epoch, 
+                    lr_scheduler = None, 
+                    print_every = 100,
+                    num_epochs = 30):
+    model.train()
+    running_loss = 0.0
+    minibatch_time = 0.0
+
+    for i, (inputs, targets) in enumerate(data_loader):
+        start = time.time()
+        inputs = Variable(inputs).cuda()
+        targets = [{k: Variable(v).cuda() for k, v in t.items()} for t in targets]
+
+        loss_dict = model(inputs, targets)
+        losses = sum(loss for loss in loss_dict.values())
+        if not math.isfinite(losses):
+            print("Loss is %-10.5f, stopping training".format(losses))
+            sys.exit(1)
+
+        optimizer.zero_grad()
+        losses.backward()
+        optimizer.step()
+
+        if lr_scheduler is not None:
+            lr_scheduler.step()
+
+        running_loss += loss.item()
+        end = time.time()
+        minibatch_time += float(end - start)
+        if (i + 1) % print_every == 0:
+            minibatch_time = minibatch_time / (3600.0 * print_every)
+            num_minibatches_left = 1.01 * len(data_loader) - (i + 1)
+            num_minibatches_per_epoch = 1.01 * len(data_loader) - 1 + \
+            ((len(dataloader.dataset) % batch_size) / batch_size)
+            num_epochs_left = num_epochs - (epoch + 1)
+            time_left = minibatch_time * \
+                (num_minibatches_left + num_epochs_left * num_minibatches_per_epoch)
+            time_left *= 6.0 # Adjust for timing discrepencies
+            train_print(running_loss, print_every, batch_size, epoch, 
+                        num_minibatches_per_epoch, time_left)
+            running_loss = 0.0
+            minibatch_time = 0.0
+    return model
+
+
+@torch.no_grad()
+def evaluate(model, data_loader, device):
+    n_threads = torch.get_num_threads()
+    torch.set_num_threads(n_threads)
+    cpu_device = torch.device("cpu")
+    model.eval()
+
+    coco = get_coco_api_from_dataset(data_loader.dataset)
+    iou_types = _get_iou_types(model)
+    coco_evaluator = CocoEvaluator(coco, iou_types)
+
+    for images, targets in metric_logger.log_every(data_loader, 100, header):
+        images = list(Variable(img).to(device) for img in images)
+
+        model_time = time.time()
+        outputs = model(images)
+
+        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        model_time = time.time() - model_time
+
+        res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+        evaluator_time = time.time()
+        coco_evaluator.update(res)
+        evaluator_time = time.time() - evaluator_time
+        metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+    coco_evaluator.synchronize_between_processes()
+
+    # accumulate predictions from all images
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
+    torch.set_num_threads(n_threads)
+    return coco_evaluator
+
+
+def main(savepath=None, backbone_state_dict=None):
     seed = 0
     torch.manual_seed(seed)
     np.random.seed(seed)
     ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-    model = make_model(backbone_state_dict, num_classes=2)
+    model = make_model(num_classes=2)
     
     device = torch.device('cpu')
     model = model.to(device)
-    
-    lr = 1e-4
-    weight_decay = 1e-7 # Default should be 1e-5
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    # Params from: https://arxiv.org/pdf/1506.01497.pdf
+    lr = 1e-3
+    weight_decay = 0.0005 # Default should be 1e-5
+    optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     
     ship_dir = '../dev/'
     train_image_dir = os.path.join(ship_dir, 'imgs/')
@@ -334,10 +439,12 @@ def main(savepath, backbone_state_dict=None):
     )
 
     vessel_dataset = VesselDataset(train_masks,
+                                   train_ids,
                                    image_names,
                                    train_image_dir=train_image_dir,
                                    mode='train')
     vessel_valid_dataset = VesselDataset(valid_masks,
+                                         valid_ids,
                                          image_names,
                                          valid_image_dir=valid_image_dir,
                                          mode='valid')
@@ -368,15 +475,20 @@ def main(savepath, backbone_state_dict=None):
 
     print('Starting Training...\n')
     for epoch in range(num_epochs):  # loop over the dataset multiple times
-        train_one_epoch(model, optimizer, loader, device, epoch, print_freq)
-        print('\nEpoch %d completed. Running validation...\n' % (epoch + 1))
-        evaluate(model, valid_loader, device)
-        print('\nSaving Model...\n')
-        torch.save(model.state_dict(), savepath)
-        print('Done.\n')
+       # train_one_epoch(model, optimizer, loader, device, epoch, lr_scheduler = None, 
+       #                 print_every = 100, num_epochs = 30)
+        print('Epoch %d completed. Running validation...\n' % (epoch + 1))
+        metrics = evaluate(model, valid_loader, device)
+        print('Saving Model...\n')
+        #torch.save(model.state_dict(), savepath)
+        print('Model Saved.\n')
+    print('Finished Training.\n')
+    print('Saving Model...\n')
+    #torch.save(model.state_dict(), savepath)
+    print('Done.')
 
-    
+
 if __name__ == '__main__':
-    backbone_loadpath = r'../data/vessel_classifier_state_dict.pth'
-    savepath = r'vessel_detector_state_dict.pth'
-    main(savepath, backbone_loadpath)
+    #backbone_loadpath = r'../data/vessel_classifier_state_dict.pth'
+    #savepath = r'vessel_detector_state_dict.pth'
+    main()

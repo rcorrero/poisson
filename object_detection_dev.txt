@@ -137,6 +137,9 @@ for i in range(10):
 ```
 
 TODO
+
+****Fix image_names including both training and valid image names bug [Will result in key error at runtime]****
+****Reformat training loop so as to not use any of that external code - I don’t understand it****
 - Implement head and code to combine with backbone into a single model.
 - Implement data loader which properly formats train/val/test imagery and targets for training.
   This includes downsampling from training sample size of 768x768 to 299x299. This may be done by
