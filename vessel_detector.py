@@ -21,6 +21,7 @@ from PIL import Image, ImageFile, ImageFilter
 import pathlib
 from typing import Callable, Iterator, Union, Optional, List, Tuple, Dict
 from torchvision.transforms.functional import resize
+from torchvision.transforms.functional_tensor import resize as T_resize
 
 import pycocotools
 from coco_utils import *
@@ -102,15 +103,15 @@ def make_target(in_mask_list, N, shape=(768, 768), null_mask_shape=(299,299)):
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
-        target["masks"] = torch.from_numpy(np.zeros((1,
-                                                     null_mask_shape[0],
-                                                     null_mask_shape[1]),
-                                                     dtype=np.uint8)) 
+        #target["masks"] = torch.from_numpy(np.zeros((1,
+        #                                             null_mask_shape[0],
+        #                                             null_mask_shape[1]),
+        #                                             dtype=np.uint8)) 
         target["area"] = torch.zeros((0,), dtype=torch.int64)
         target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
         return target
     bbox_array = np.zeros((N, 4), dtype=np.float32)
-    masks = np.zeros((N, shape[0], shape[1]), dtype=np.uint8)
+    #masks = np.zeros((N, shape[0], shape[1]), dtype=np.uint8)
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
@@ -127,7 +128,7 @@ def make_target(in_mask_list, N, shape=(768, 768), null_mask_shape=(299,299)):
     target = {
         'boxes': torch.from_numpy(bbox_array),
         'labels': labels,
-        'masks': torch.from_numpy(masks),
+        #'masks': torch.from_numpy(masks),
         'area': torch.from_numpy(areas),
         'iscrowd': is_crowd
     }
@@ -209,9 +210,9 @@ class Resize:
         
     def __call__(self, image, target) -> Tuple[torch.tensor, dict]:
         image = resize(image, size=self.output_shape, interpolation=self.interpolation)
-        if target['masks'].shape[-1] != self.output_shape[-1]:
-            target['masks'] = resize(target['masks'], size=self.output_shape,
-                                    interpolation=self.interpolation)
+    #    if target['masks'].shape[-1] != self.output_shape[-1]:
+    #        target['masks'] = T_resize(target['masks'], size=self.output_shape,
+    #                                interpolation=self.interpolation)
         target['boxes'] = self.resize_boxes(target['boxes'])
         return image, target
     
