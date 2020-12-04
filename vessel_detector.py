@@ -268,7 +268,7 @@ class VesselDataset(Dataset):
 def make_model(backbone_state_dict, num_classes, anchor_sizes: tuple):
         inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
-        inception.load_state_dict(torch.load(state_dict))
+        inception.load_state_dict(torch.load(backbone_state_dict))
         modules = list(inception.children())[:-1]
         backbone = nn.Sequential(*modules)
 
