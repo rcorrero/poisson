@@ -266,7 +266,7 @@ class VesselDataset(Dataset):
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
 def make_model(backbone_state_dict, num_classes, anchor_sizes: tuple):
-        inception = torchvision.models.inception_v3(pretrained=True, progress=False, 
+        inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
         inception.load_state_dict(torch.load(state_dict))
         modules = list(inception.children())[:-1]
@@ -493,11 +493,12 @@ def main(savepath, backbone_state_dict=None):
     params = {
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
         'seed': 0,
+        'num_classes': 2,
         'lr': 0.001,
         'momentum': 0.9,
         'weight_decay': 0.0005,
-        # All samples expected to have at least one gt bbox - not nec. in code though
-        'no_null"samples': True,
+        # All samples have at least one ground truth bbox
+        'no_null_samples': True,
         'test_size': 0.01,
         'shuffle': True,       
         'batch_size': 64,
@@ -514,8 +515,10 @@ def main(savepath, backbone_state_dict=None):
     np.random.seed(seed)
     ImageFile.LOAD_TRUNCATED_IMAGES = True    # Necessary for PIL to work correctly
 
+    # NOTE: InceptionV3 backbone requires input samples of size 299x299x3
     anchor_sizes = params['anchor_sizes']
-    model = make_model(backbone_state_dict, num_classes=2, anchor_sizes=anchor_sizes)
+    num_classes = params['num_classes']
+    model = make_model(backbone_state_dict, num_classes=num_classes, anchor_sizes=anchor_sizes)
     
     device = torch.device('cuda')
     model = model.to(device)
