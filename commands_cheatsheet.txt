@@ -39,3 +39,6 @@ kill <pid>
 
 # Print contents of text file
 cat <path/to/file>
+
+# Install correct pytorch version
+pip install torch==1.4.0 torchvision==0.5.0
