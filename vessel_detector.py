@@ -501,7 +501,7 @@ def main(savepath, backbone_state_dict=None):
         'no_null_samples': True,
         'test_size': 0.01,
         'shuffle': True,       
-        'batch_size': 64,
+        'batch_size': 16,
         'num_epochs': 30,
         'print_every': 100,
         # Use small anchor boxes since targets are small
