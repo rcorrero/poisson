@@ -24,7 +24,6 @@ from PIL import Image, ImageFile, ImageFilter
 import pathlib
 from typing import Callable, Iterator, Union, Optional, List, Tuple, Dict
 from torchvision.transforms.functional import resize
-from torchvision.transforms.functional_tensor import resize as T_resize
 
 
 def rle2bbox(rle, shape):
@@ -87,15 +86,6 @@ def rle2bbox(rle, shape):
 #     return img.reshape(shape).T  # Needed to align to RLE direction
 
 
-def is_valid(rle, shape=(768,768)):
-    width, height = shape
-    xmin, ymin, xmax, ymax = rle2bbox(rle, shape)
-    if xmin >= 0 and xmax <= width and xmin < xmax and \
-    ymin >= 0 and ymax <= height and ymin < ymax:
-        return True
-    return False
-
-
 def make_target(in_mask_list, N, shape=(768, 768)):
     if N == 0:
         target = {}
@@ -153,7 +143,12 @@ def is_valid(rle, shape=(768,768)) -> bool:
     return False
 
 
-def filter_masks(masks: pd.DataFrame) -> Tuple[dict, dict]:
+def filter_masks(masks: pd.DataFrame, no_null_samples: bool) -> Tuple[dict, dict]:
+    if no_null_samples:
+        masks_not_null = masks.drop(
+            masks[masks.EncodedPixels.isnull()].index
+        )
+        masks = masks_not_null
     grp = list(masks.groupby('ImageId'))
     image_names =  {idx: filename for idx, (filename, _) in enumerate(grp)} 
     image_masks = {idx: m['EncodedPixels'].values for idx, (_, m) in enumerate(grp)}
@@ -171,11 +166,14 @@ def filter_masks(masks: pd.DataFrame) -> Tuple[dict, dict]:
     return image_names, image_masks
         
 
-def get_train_valid_dfs(masks: dict, seed: int = 0) -> Tuple[list, dict, list, dict]:
+def get_train_valid_dfs(masks: dict,
+                           seed: int,
+                           test_size: Union[float, int]
+                          ) -> Tuple[list, dict, list, dict]:
     ids = np.array(list(masks.keys())).reshape((len(masks),1))
     train_ids, valid_ids = train_test_split(
          ids, 
-         test_size = 4, 
+         test_size = test_size, 
          random_state=seed
         )
     train_ids, valid_ids = list(train_ids.flatten()), list(valid_ids.flatten())
@@ -216,7 +214,7 @@ class Resize:
     
     
 class RandomBlur:
-    def __init__(self, p=0.5, radius=2):
+    def __init__(self, p, radius=2):
         self.p = p
         self.radius = radius
 
@@ -308,7 +306,7 @@ class VesselDataset(Dataset):
         
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
-def make_model(backbone_state_dict, num_classes):
+def make_model(backbone_state_dict, num_classes, anchor_sizes: tuple):
         inception = torchvision.models.inception_v3(pretrained=True, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
         #inception.load_state_dict(torch.load(state_dict))
@@ -321,11 +319,15 @@ def make_model(backbone_state_dict, num_classes):
 
         backbone.out_channels = 2048
 
-        anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
+        anchor_generator = AnchorGenerator(sizes=(anchor_sizes,),
                                            aspect_ratios=((0.5, 1.0, 2.0),))
 
-        model = FasterRCNN(backbone, rpn_anchor_generator=anchor_generator,
-                           box_predictor=FastRCNNPredictor(1024, num_classes))
+        model = FasterRCNN(backbone,
+                           min_size=299,
+                           max_size=299,
+                           rpn_anchor_generator=anchor_generator,
+                           box_predictor=FastRCNNPredictor(1024, num_classes)
+        )
 
         return model
 
@@ -348,10 +350,10 @@ def train_one_epoch(model,
                     data_loader, 
                     device, 
                     epoch, 
-                    lr_scheduler = None,
-                    batch_size = 64,
-                    print_every = 100,
-                    num_epochs = 30):
+                    lr_scheduler,
+                    batch_size,
+                    print_every,
+                    num_epochs):
     model.train()
     running_loss = 0.0
     minibatch_time = 0.0
@@ -465,7 +467,7 @@ def get_mappings(iou_mat):
     return mappings
 
 
-def calculate_map(gt_boxes,pr_boxes,scores,thresh=0.5,form='pascal_voc'):
+def calculate_map(gt_boxes,pr_boxes,scores,thresh, form='pascal_voc'):
     # print("GT SHAPE: ", gt_boxes.shape)
     # print("PR SHAPE: ", pr_boxes.shape)
     if gt_boxes.shape[0] == 0:
@@ -494,7 +496,7 @@ def calculate_map(gt_boxes,pr_boxes,scores,thresh=0.5,form='pascal_voc'):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device, thresh_list = [0.0, 0.25, 0.5, 0.75, 1.0]):
+def evaluate(model, data_loader, device, thresh_list):
     # n_threads = torch.get_num_threads()
     # torch.set_num_threads(n_threads)
     cpu_device = torch.device("cpu")
@@ -545,37 +547,55 @@ def evaluate(model, data_loader, device, thresh_list = [0.0, 0.25, 0.5, 0.75, 1.
     return metrics
 
 
-def print_metrics(metrics: dict, epoch: int, thresh_list = [0.25, 0.5, 0.75, 0.9]) -> None:
+def print_metrics(metrics: dict, epoch: int, thresh_list: list) -> None:
     print('[Epoch %-2.d] Evaluation results:' % (epoch + 1))
     for thresh in thresh_list:
         mAP = metrics[thresh]
-        print('    Threshold: %-3.3f | mAP: %-3.3f' % (thresh, mAP))
+        print('    IoU (>) Threshold: %-3.3f | mAP: %-3.3f' % (thresh, mAP))
     print('\n')
 
 
 def main(savepath, backbone_state_dict=None):
-    seed = 0
+    # Define all numeric params in one dict to make assumptions clear
+    params = {
+        'seed': 0,
+        'lr': 0.001,
+        'weight_decay': 0.0005,
+        'test_size': 1,
+        'batch_size': 2,
+        'num_epochs': 3,
+        'print_every': 1,
+        'anchor_sizes': (8, 16, 32, 64, 128),
+        'thresh_list': [0.5, 0.75, 1.0]
+    }
+    
+    seed = params['seed']
     torch.manual_seed(seed)
     np.random.seed(seed)
     ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-    model = make_model(backbone_state_dict=None, num_classes=1000)
+    anchor_sizes = params['anchor_sizes']
+    model = make_model(backbone_state_dict=None, num_classes=1000, anchor_sizes=anchor_sizes)
     
     device = torch.device('cpu')
     model = model.to(device)
 
     # Params from: https://arxiv.org/pdf/1506.01497.pdf
-    lr = 1e-3
-    weight_decay = 0.0005 # Default should be 1e-5
+    lr = params['lr']
+    weight_decay = params['weight_decay']
     optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay)
     
     ship_dir = '../dev/imgs/'
     train_image_dir = ship_dir
     valid_image_dir = ship_dir
     masks = get_masks(ship_dir, train_image_dir, valid_image_dir)
-    image_names, filtered_masks = filter_masks(masks)
+    
+    no_null_samples = True
+    image_names, filtered_masks = filter_masks(masks, no_null_samples=no_null_samples)
+    
+    test_size = params['test_size']
     train_ids, train_masks, valid_ids, valid_masks = get_train_valid_dfs(
-        filtered_masks
+        filtered_masks, seed, test_size=test_size
     )
 
     vessel_dataset = VesselDataset(train_masks,
@@ -592,7 +612,7 @@ def main(savepath, backbone_state_dict=None):
     print("Train Size: %d" % len(train_ids))
     print("Valid Size: %d" % len(valid_ids))
     
-    batch_size = 2
+    batch_size = params['batch_size']
     shuffle = True
     collate_fn = lambda batch: tuple(zip(*batch))
     loader = DataLoader(
@@ -613,9 +633,9 @@ def main(savepath, backbone_state_dict=None):
                 pin_memory=torch.cuda.is_available()
             )
     
-    num_epochs = 30
-    print_every = 1
-    thresh_list = [0.0, 0.25, 0.5, 0.75, 1.0]
+    num_epochs = params['num_epochs']
+    print_every = params['print_every']
+    thresh_list = params['thresh_list']
 
     print('Starting Training...\n')
     for epoch in range(num_epochs):  # loop over the dataset multiple times       

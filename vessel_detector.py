@@ -24,7 +24,6 @@ from PIL import Image, ImageFile, ImageFilter
 import pathlib
 from typing import Callable, Iterator, Union, Optional, List, Tuple, Dict
 from torchvision.transforms.functional import resize
-from torchvision.transforms.functional_tensor import resize as T_resize
 
 
 def rle2bbox(rle, shape):
@@ -70,65 +69,23 @@ def rle2bbox(rle, shape):
     return x0, y0, x1, y1
 
 
-# # From: https://www.kaggle.com/paulorzp/run-length-encode-and-decode
-# def rle_decode(mask_rle, shape=(768, 768)):
-#     '''
-#     mask_rle: run-length as string formated (start length)
-#     shape: (height,width) of array to return 
-#     Returns numpy array, 1 - mask, 0 - background
-#     '''
-#     s = mask_rle.split()
-#     starts, lengths = [np.asarray(x, dtype=int) for x in (s[0:][::2], s[1:][::2])]
-#     starts -= 1
-#     ends = starts + lengths
-#     img = np.zeros(shape[0]*shape[1], dtype=np.uint8)
-#     for lo, hi in zip(starts, ends):
-#         img[lo:hi] = 1
-#     return img.reshape(shape).T  # Needed to align to RLE direction
-
-
-def is_valid(rle, shape=(768,768)):
-    width, height = shape
-    xmin, ymin, xmax, ymax = rle2bbox(rle, shape)
-    if xmin >= 0 and xmax <= width and xmin < xmax and \
-    ymin >= 0 and ymax <= height and ymin < ymax:
-        return True
-    return False
-
-
 def make_target(in_mask_list, N, shape=(768, 768)):
     if N == 0:
         target = {}
         target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
         target["labels"] = torch.zeros((0), dtype=torch.int64)
-        # target["masks"] = torch.from_numpy(np.zeros((1,
-        #                                             null_mask_shape[0],
-        #                                             null_mask_shape[1]),
-        #                                             dtype=np.uint8)) 
-        # target["area"] = torch.zeros((0,), dtype=torch.int64)
-        # target["iscrowd"] = torch.zeros((0,), dtype=torch.int64)
         return target
     bbox_array = np.zeros((N, 4), dtype=np.float32)
-    #masks = np.zeros((N, shape[0], shape[1]), dtype=np.uint8)
     labels = torch.ones((N,), dtype=torch.int64)
     i = 0
     for rle in in_mask_list:
         if isinstance(rle, str):
-            # bbox = tuple(x1, y1, x2, y2)
             bbox = rle2bbox(rle, shape)
             bbox_array[i,:] = bbox
-            # mask = rle_decode(rle)
-            # masks[i, :, :] = mask
             i += 1
-    # areas = (bbox_array[:, 3] - bbox_array[:, 1]) * (bbox_array[:, 2] - bbox_array[:, 0])
-    # suppose all instances are not crowd
-    # is_crowd = torch.zeros((N,), dtype=torch.int64)
     target = {
         'boxes': torch.from_numpy(bbox_array),
         'labels': labels,
-        # #'masks': torch.from_numpy(masks),
-        # 'area': torch.from_numpy(areas),
-        # 'iscrowd': is_crowd
     }
     return target
 
@@ -153,7 +110,12 @@ def is_valid(rle, shape=(768,768)) -> bool:
     return False
 
 
-def filter_masks(masks: pd.DataFrame) -> Tuple[dict, dict]:
+def filter_masks(masks: pd.DataFrame, no_null_samples: bool) -> Tuple[dict, dict]:
+    if no_null_samples:
+        masks_not_null = masks.drop(
+            masks[masks.EncodedPixels.isnull()].index
+        )
+        masks = masks_not_null
     grp = list(masks.groupby('ImageId'))
     image_names =  {idx: filename for idx, (filename, _) in enumerate(grp)} 
     image_masks = {idx: m['EncodedPixels'].values for idx, (_, m) in enumerate(grp)}
@@ -171,11 +133,14 @@ def filter_masks(masks: pd.DataFrame) -> Tuple[dict, dict]:
     return image_names, image_masks
         
 
-def get_train_valid_dfs(masks: dict, seed: int = 0) -> Tuple[list, dict, list, dict]:
+def get_train_valid_dfs(masks: dict,
+                           seed: int,
+                           test_size: Union[float, int]
+                          ) -> Tuple[list, dict, list, dict]:
     ids = np.array(list(masks.keys())).reshape((len(masks),1))
     train_ids, valid_ids = train_test_split(
          ids, 
-         test_size = 4, 
+         test_size = test_size, 
          random_state=seed
         )
     train_ids, valid_ids = list(train_ids.flatten()), list(valid_ids.flatten())
@@ -200,7 +165,6 @@ class Resize:
         x_new, y_new = self.output_shape
         x_scale = x_new / x_orig
         y_scale = y_new / y_orig
-        # bbox = tuple(x1, y1, x2, y2)
         row_scaler = torch.tensor([x_scale, y_scale, x_scale, y_scale])
         boxes_scaled = torch.round(boxes * row_scaler).int() # Converts to new coordinates
         return boxes_scaled
@@ -208,15 +172,12 @@ class Resize:
         
     def __call__(self, image, target) -> Tuple[torch.tensor, dict]:
         image = resize(image, size=self.output_shape, interpolation=self.interpolation)
-       # if target['masks'].shape[-1] != self.output_shape[-1]:
-       #     target['masks'] = T_resize(target['masks'], size=self.output_shape,
-       #                             interpolation=self.interpolation)
         target['boxes'] = self.resize_boxes(target['boxes'])
         return image, target
     
     
 class RandomBlur:
-    def __init__(self, p=0.5, radius=2):
+    def __init__(self, p, radius=2):
         self.p = p
         self.radius = radius
 
@@ -283,7 +244,6 @@ class VesselDataset(Dataset):
         else:
             img_path = os.path.join(self.test_image_dir, img_file_name)
 
-        #img = imread(img_path)
         img = Image.open(img_path)
         if self.mode =='train' or self.mode =='valid':
             img_boxes = self.boxes[idx]
@@ -292,9 +252,6 @@ class VesselDataset(Dataset):
             img, target = Resize(input_shape = (768, 768), 
                                  output_shape = (299, 299)
                                 )(img, target)
-            # Make image_id
-            # image_id = torch.tensor([idx])
-            # target["image_id"] = image_id
         
         if self.mode =='train':
             img = self.train_transform(img)
@@ -308,7 +265,7 @@ class VesselDataset(Dataset):
         
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
-def make_model(backbone_state_dict, num_classes):
+def make_model(backbone_state_dict, num_classes, anchor_sizes: tuple):
         inception = torchvision.models.inception_v3(pretrained=True, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
         inception.load_state_dict(torch.load(state_dict))
@@ -322,11 +279,15 @@ def make_model(backbone_state_dict, num_classes):
         backbone.out_channels = 2048
 
         # Use smaller anchor boxes since targets are relatively small
-        anchor_generator = AnchorGenerator(sizes=((8, 16, 32, 64, 128),),
+        anchor_generator = AnchorGenerator(sizes=(anchor_sizes,),
                                            aspect_ratios=((0.5, 1.0, 2.0),))
 
-        model = FasterRCNN(backbone, rpn_anchor_generator=anchor_generator,
-                           box_predictor=FastRCNNPredictor(1024, num_classes))
+        model = FasterRCNN(backbone,
+                           min_size=299,   # Backbone expects 299x299 inputs
+                           max_size=299,   # so you don't need to rescale
+                           rpn_anchor_generator=anchor_generator,
+                           box_predictor=FastRCNNPredictor(1024, num_classes)
+        )
 
         return model
 
@@ -349,10 +310,10 @@ def train_one_epoch(model,
                     data_loader, 
                     device, 
                     epoch, 
-                    lr_scheduler = None,
-                    batch_size = 64,
-                    print_every = 100,
-                    num_epochs = 30):
+                    lr_scheduler,
+                    batch_size,
+                    print_every,
+                    num_epochs):
     model.train()
     running_loss = 0.0
     minibatch_time = 0.0
@@ -465,9 +426,7 @@ def get_mappings(iou_mat):
     return mappings
 
 
-def calculate_map(gt_boxes,pr_boxes,scores,thresh=0.5,form='pascal_voc'):
-    # print("GT SHAPE: ", gt_boxes.shape)
-    # print("PR SHAPE: ", pr_boxes.shape)
+def calculate_map(gt_boxes, pr_boxes, scores, thresh, form='pascal_voc'):
     if gt_boxes.shape[0] == 0:
         if pr_boxes.shape[0] == 0:
             return 1.0
@@ -480,7 +439,6 @@ def calculate_map(gt_boxes,pr_boxes,scores,thresh=0.5,form='pascal_voc'):
     
     # thresholding
     iou_mat = iou_mat.where(iou_mat>thresh,tensor(0.))
-    # print('IOU SHAPE: ', iou_mat.shape)
     
     mappings = get_mappings(iou_mat)
     
@@ -494,27 +452,17 @@ def calculate_map(gt_boxes,pr_boxes,scores,thresh=0.5,form='pascal_voc'):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device, thresh_list = [0.0, 0.25, 0.5, 0.75, 1.0]):
-    # n_threads = torch.get_num_threads()
-    # torch.set_num_threads(n_threads)
+def evaluate(model, data_loader, device, thresh_list):
     cpu_device = torch.device("cpu")
     model.eval()
-
-    #coco = get_coco_api_from_dataset(data_loader.dataset)
-    #iou_types = _get_iou_types(model)
-    #coco_evaluator = CocoEvaluator(coco, iou_types)
     start = time.time()
     mAP_dict = {thresh: [] for thresh in thresh_list}
     for images, targets in data_loader:
         images = list(Variable(img).to(device) for img in images)
-        # print('Targets: ', targets)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        #        model_time = time.time()
         outputs = model(images, targets)
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        # model_time = time.time() - model_time
-        # res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
         # Calculate mAP
         for thresh in thresh_list:
             mAP_list = [calculate_map(target['boxes'], 
@@ -522,52 +470,60 @@ def evaluate(model, data_loader, device, thresh_list = [0.0, 0.25, 0.5, 0.75, 1.
                                       output['scores'], 
                                       thresh=thresh) \
                         for target, output in zip(targets, outputs)]
-            #mAP = np.mean(mAP_list)
             mAP_dict[thresh] += mAP_list # Creates a list of mAP's for each sample
-    #n_samples = len(data_loader.dataset)
     end = time.time()
     for thresh in thresh_list:
         mAP_dict[thresh] = np.mean(mAP_dict[thresh])
     # Create metrics dict
     metrics = mAP_dict
     metrics['eval_time'] = end - start
-        
-
-    # gather the stats from all processes
-   # metric_logger.synchronize_between_processes()
-   # print("Averaged stats:", metric_logger)
-   # coco_evaluator.synchronize_between_processes()
-
-    # accumulate predictions from all images
-   # coco_evaluator.accumulate()
-   # coco_evaluator.summarize()
-   # torch.set_num_threads(n_threads)
     return metrics
 
 
-def print_metrics(metrics: dict, epoch: int, thresh_list = [0.25, 0.5, 0.75, 0.9]) -> None:
+def print_metrics(metrics: dict, epoch: int, thresh_list) -> None:
     print('[Epoch %-2.d] Evaluation results:' % (epoch + 1))
     for thresh in thresh_list:
         mAP = metrics[thresh]
-        print('    Threshold: %-3.3f | mAP: %-3.3f' % (thresh, mAP))
+        print('    IoU (>) Threshold: %-3.3f | mAP: %-3.3f' % (thresh, mAP))
     print('\n')
 
 
 def main(savepath, backbone_state_dict=None):
-    seed = 0
+    # Define all training params in one dict to make assumptions clear
+    params = {
+        # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
+        'seed': 0,
+        'lr': 0.001,
+        'momentum': 0.9,
+        'weight_decay': 0.0005,
+        # All samples expected to have at least one gt bbox - not nec. in code though
+        'no_null"samples': True,
+        'test_size': 0.01,
+        'shuffle': True,       
+        'batch_size': 64,
+        'num_epochs': 30,
+        'print_every': 100,
+        # Use small anchor boxes since targets are small
+        'anchor_sizes': (8, 16, 32, 64, 128),
+        # IoU thresholds for mAP calculation
+        'thresh_list': [0.5, 0.75, 1.0]
+    }
+    
+    seed = params['seed']
     torch.manual_seed(seed)
     np.random.seed(seed)
-    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    ImageFile.LOAD_TRUNCATED_IMAGES = True    # Necessary for PIL to work correctly
 
-    model = make_model(backbone_state_dict, num_classes=2)
+    anchor_sizes = params['anchor_sizes']
+    model = make_model(backbone_state_dict, num_classes=2, anchor_sizes=anchor_sizes)
     
     device = torch.device('cuda')
     model = model.to(device)
 
     # Params from: https://arxiv.org/pdf/1506.01497.pdf
-    lr = 1e-3
-    momentum = 0.9
-    weight_decay = 0.0005
+    lr = params['lr']
+    momentum = params['momentum']
+    weight_decay = params['weight_decay']
     optimizer = optim.SGD(model.parameters(),
                           lr=lr,
                           momentum=momentum,
@@ -577,9 +533,13 @@ def main(savepath, backbone_state_dict=None):
     train_image_dir = os.path.join(ship_dir, 'train_v2/')
     valid_image_dir = os.path.join(ship_dir, 'train_v2/')
     masks = get_masks(ship_dir, train_image_dir, valid_image_dir)
-    image_names, filtered_masks = filter_masks(masks)
+
+    no_null_samples = params['no_null_samples']
+    image_names, filtered_masks = filter_masks(masks, no_null_samples=no_null_samples)
+    
+    test_size = params['test_size']
     train_ids, train_masks, valid_ids, valid_masks = get_train_valid_dfs(
-        filtered_masks
+        filtered_masks, seed, test_size=test_size
     )
 
     vessel_dataset = VesselDataset(train_masks,
@@ -596,8 +556,8 @@ def main(savepath, backbone_state_dict=None):
     print("Train Size: %d" % len(train_ids))
     print("Valid Size: %d" % len(valid_ids))
     
-    batch_size = 64
-    shuffle = True
+    batch_size = params['batch_size']
+    shuffle = params['shuffle']
     collate_fn = lambda batch: tuple(zip(*batch))
     loader = DataLoader(
                 dataset=vessel_dataset,
@@ -617,12 +577,12 @@ def main(savepath, backbone_state_dict=None):
                 pin_memory=torch.cuda.is_available()
             )
     
-    num_epochs = 30
-    print_every = 100
-    thresh_list = [0.0, 0.25, 0.5, 0.75, 1.0]
+    num_epochs = params['num_epochs']
+    print_every = params['print_every']
+    thresh_list = params['thresh_list']
 
     print('Starting Training...\n')
-    for epoch in range(num_epochs):  # loop over the dataset multiple times       
+    for epoch in range(num_epochs):      
         train_one_epoch(model, optimizer, loader, device, epoch, lr_scheduler = None, 
                         batch_size=batch_size, print_every=print_every, num_epochs = num_epochs)
         print('Epoch %d completed. Running validation...\n' % (epoch + 1))

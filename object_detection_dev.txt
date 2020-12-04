@@ -136,9 +136,14 @@ for i in range(10):
         cv2.rectangle(img_1, (prop.bbox[1], prop.bbox[0]), (prop.bbox[3], prop.bbox[2]), (255, 0, 0), 2)
 ```
 
-TODO:
-***Change training sample distributions to favor positive samples***
+=======================TODO=======================
+TRAINER:
+***Change training sample distributions to favor positive samples
+***Define all params in a dict and pass values into methods as appropriate
+***Verify Code is functional, then write tests and create `test_vessel_detector.py` file
+***Comment code
 
+PIPELINE:
 - Implement image tiler which splits test images and masks into overlapping tiles, inputs these
   tiles into the trained object detection model which outputs prediction masks, and combines the 
   predictions masks into a single mask for the entire image.
