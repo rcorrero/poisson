@@ -457,8 +457,7 @@ def calculate_map(gt_boxes,
     fp = mappings.sum(0).eq(0).sum()
     fn = mappings.sum(1).eq(0).sum()
     mAP = tp / (tp+fp+fn)
-    print(mAP)
-    return mAP
+    return mAP.cpu().detach().numpy()
 
 
 @torch.no_grad()
