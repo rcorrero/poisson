@@ -448,7 +448,7 @@ def calculate_map(gt_boxes,
     iou_mat = iou_mat.to(device)
     
     # thresholding
-    iou_mat = iou_mat.where(iou_mat>thresh,tensor(0.))
+    iou_mat = iou_mat.where(iou_mat>thresh,tensor(0.).to(device))
     
     mappings = get_mappings(iou_mat)
     
