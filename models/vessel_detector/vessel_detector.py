@@ -114,6 +114,15 @@ def is_valid(rle, shape=(768,768)) -> bool:
     return False
 
 
+def is_valid_box(bbox, shape=(299,299)) -> bool:
+    width, height = shape
+    xmin, ymin, xmax, ymax = bbox
+    if xmin >= 0 and xmax <= width and xmin < xmax and \
+    ymin >= 0 and ymax <= height and ymin < ymax:
+        return True
+    return False
+
+
 def filter_masks(masks: pd.DataFrame, no_null_samples: bool) -> Tuple[dict, dict]:
     if no_null_samples:
         masks_not_null = masks.drop(
@@ -257,7 +266,7 @@ class VesselDataset(Dataset):
                                  output_shape = (299, 299)
                                 )(img, target)
             for row in target['boxes']:
-                if not is_valid(row, shape=(299,299)):
+                if not is_valid_box(row, shape=(299,299)):
                     random_idx = random.choice(range(self.__len__()))
                     return self.__getitem__(random_idx)
         
