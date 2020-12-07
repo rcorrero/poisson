@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import torch
 import math
@@ -87,6 +88,8 @@ def make_target(in_mask_list, N, shape=(768, 768)):
         'boxes': torch.from_numpy(bbox_array),
         'labels': labels,
     }
+    assert not np.any(np.isnan(target['boxes'].numpy()))
+    assert not np.any(np.isnan(target['labels'].numpy()))
     return target
 
 
@@ -255,12 +258,15 @@ class VesselDataset(Dataset):
         
         if self.mode =='train':
             img = self.train_transform(img)
+            assert not np.any(np.isnan(img.numpy()))
             return img, target
         elif self.mode == 'valid':
             img = self.valid_transform(img)
+            assert not np.any(np.isnan(img.numpy()))
             return img, target
         else:
             img = self.test_transform(img)
+            assert not np.any(np.isnan(img.numpy()))
             return img
         
 
@@ -330,7 +336,9 @@ def train_one_epoch(model,
         loss_dict = model(inputs, targets)
         losses = sum(loss for loss in loss_dict.values())
         if not math.isfinite(losses):
-            print("Loss is %-10.5f, stopping training".format(losses))
+            #print("Loss is %-10.5f, skipping this batch...\n" % losses)
+            #continue
+            print("Loss is %-10.5f, stopping training" % losses)
             sys.exit(1)
 
         optimizer.zero_grad()
