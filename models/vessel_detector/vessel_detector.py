@@ -627,8 +627,16 @@ def main(savepath, backbone_state_dict=None):
 
     print('Starting Training...\n')
     for epoch in range(num_epochs):      
-        train_one_epoch(model, optimizer, loader, device, epoch, lr_scheduler = None, 
-                        batch_size=batch_size, print_every=print_every, num_epochs = num_epochs)
+        model = train_one_epoch(model,
+                                optimizer,
+                                loader,
+                                device,
+                                epoch,
+                                lr_scheduler = None, 
+                                batch_size=batch_size,
+                                print_every=print_every,
+                                num_epochs = num_epochs
+        )
         print('Epoch %d completed. Running validation...\n' % (epoch + 1))
         metrics = evaluate(model, valid_loader, device, thresh_list)
         print_metrics(metrics, epoch, thresh_list)
