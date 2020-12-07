@@ -430,7 +430,12 @@ def get_mappings(iou_mat):
     return mappings
 
 
-def calculate_map(gt_boxes, pr_boxes, scores, thresh, form='pascal_voc'):
+def calculate_map(gt_boxes,
+                    pr_boxes,
+                    scores,
+                    thresh,
+                    device,
+                    form='pascal_voc'):
     if gt_boxes.shape[0] == 0:
         if pr_boxes.shape[0] == 0:
             return 1.0
@@ -439,7 +444,8 @@ def calculate_map(gt_boxes, pr_boxes, scores, thresh, form='pascal_voc'):
         return 0.0
     # sorting
     pr_boxes = pr_boxes[scores.argsort().flip(-1)]
-    iou_mat = calculate_iou(gt_boxes,pr_boxes,form) 
+    iou_mat = calculate_iou(gt_boxes,pr_boxes,form)
+    iou_mat.to(device)
     
     # thresholding
     iou_mat = iou_mat.where(iou_mat>thresh,tensor(0.))
@@ -472,7 +478,8 @@ def evaluate(model, data_loader, device, thresh_list):
             mAP_list = [calculate_map(target['boxes'], 
                                       output['boxes'], 
                                       output['scores'], 
-                                      thresh=thresh) \
+                                      thresh=thresh,
+                                      device=device) \
                         for target, output in zip(targets, outputs)]
             mAP_dict[thresh] += mAP_list # Creates a list of mAP's for each sample
     end = time.time()
