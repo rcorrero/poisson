@@ -512,7 +512,8 @@ def main(savepath, backbone_state_dict=None):
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
         'seed': 0,
         'num_classes': 2,
-        'lr': 0.001,
+        # Lr in paper is .001 but this leads to NaN losses
+        'lr': 0.0001,
         'momentum': 0.9,
         'weight_decay': 0.0005,
         # All samples have at least one ground truth bbox
