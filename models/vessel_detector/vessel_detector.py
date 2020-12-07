@@ -457,7 +457,7 @@ def calculate_map(gt_boxes, pr_boxes, scores, thresh, form='pascal_voc'):
 
 @torch.no_grad()
 def evaluate(model, data_loader, device, thresh_list):
-    cpu_device = torch.device("cpu")
+    #cpu_device = torch.device("cpu")
     model.eval()
     start = time.time()
     mAP_dict = {thresh: [] for thresh in thresh_list}
@@ -466,7 +466,7 @@ def evaluate(model, data_loader, device, thresh_list):
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         outputs = model(images, targets)
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        #outputs = [{k: v.to(device) for k, v in t.items()} for t in outputs]
         # Calculate mAP
         for thresh in thresh_list:
             mAP_list = [calculate_map(target['boxes'], 
