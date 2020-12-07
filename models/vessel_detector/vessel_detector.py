@@ -445,7 +445,7 @@ def calculate_map(gt_boxes,
     # sorting
     pr_boxes = pr_boxes[scores.argsort().flip(-1)]
     iou_mat = calculate_iou(gt_boxes,pr_boxes,form)
-    iou_mat.to(device)
+    iou_mat = iou_mat.to(device)
     
     # thresholding
     iou_mat = iou_mat.where(iou_mat>thresh,tensor(0.))
