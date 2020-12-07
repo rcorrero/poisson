@@ -339,6 +339,7 @@ def train_one_epoch(model,
             #print("Loss is %-10.5f, skipping this batch...\n" % losses)
             #continue
             print("Loss is %-10.5f, stopping training" % losses)
+            print("Loss dict:\n", loss_dict)
             sys.exit(1)
 
         optimizer.zero_grad()

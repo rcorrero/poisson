@@ -1,10 +1,13 @@
 2020/12/7
-TODO:
 - Create unittest for VM
 - Reformat repo Ð put all .py files in directories
 - Increase max number of predicted boxes in RPN
 - Verify all hyperparams
 - Begin training model
+
+Note: The learning rate in the Faster RÐCNN paper (https://arxiv.org/pdf/1506.01497.pdf)
+is too large for my model, and leads to NaN losses. I chose to train with a learning rate
+of 1e-4 instead.
 
 
 2020/11/27
