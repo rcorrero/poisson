@@ -3,6 +3,7 @@ import sys
 import time
 import torch
 import math
+import random
 import numpy as np
 import pandas as pd
 import torch.nn as nn
@@ -255,6 +256,10 @@ class VesselDataset(Dataset):
             img, target = Resize(input_shape = (768, 768), 
                                  output_shape = (299, 299)
                                 )(img, target)
+            for row in target['boxes']:
+                if not is_valid(row, shape=(299,299)):
+                    random_idx = random.choice(range(self.__len__()))
+                    return self.__getitem__(random_idx)
         
         if self.mode =='train':
             img = self.train_transform(img)
