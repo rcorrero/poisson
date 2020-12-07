@@ -6,10 +6,9 @@
 
 # Irrelevant background files #
 ###############################
-/dev/
 /documents/
-/notes/
 /papers/
+/private/
 *.egg-info/
 
 

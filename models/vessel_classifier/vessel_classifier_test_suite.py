@@ -157,7 +157,7 @@ def test(model, criterion, test_loader):
 
 def make_test_loader():
     seed = 0
-    ship_dir = '../data/test/'
+    ship_dir = '../../../data/test/'
     test_image_dir = os.path.join(ship_dir, 'imgs/')
     labels = pd.read_csv(os.path.join(ship_dir, 'labels.csv'))
     print("Test Size: %d" % len(labels['sample_id'].tolist()))
@@ -181,7 +181,7 @@ def make_test_loader():
 
 if __name__ == '__main__':
     ImageFile.LOAD_TRUNCATED_IMAGES = True
-    state_dict =  r'../data/vessel_classifier_state_dict.pth'
+    state_dict =  r'../../../data/vessel_classifier_state_dict.pth'
     model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                             aux_logits=False)
     model.load_state_dict(torch.load(state_dict))

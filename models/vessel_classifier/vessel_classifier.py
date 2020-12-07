@@ -141,7 +141,7 @@ def main(savepath, load_state_dict=False, state_dict=None):
     weight_decay = 1e-7 # Default should be 1e-5
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     
-    ship_dir = '../data/airbus-ship-detection/'
+    ship_dir = '../../../data/airbus-ship-detection/'
     train_image_dir = os.path.join(ship_dir, 'train_v2/')
     valid_image_dir = os.path.join(ship_dir, 'train_v2/')
     masks = pd.read_csv(os.path.join(ship_dir,
@@ -240,6 +240,6 @@ if __name__ == '__main__':
     #    - Decrease weight decay from 1e-5 to 1e-7
     #    - Use state_dict from previous run
     load_state_dict = True
-    loadpath = r'../data/vessel_classifier_state_dict.pth'
+    loadpath = r'../../../data/vessel_classifier_state_dict.pth'
     savepath = r'vessel_classifier_state_dict.pth'
     main(savepath, load_state_dict, loadpath)

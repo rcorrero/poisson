@@ -106,7 +106,7 @@ class TestVesselClassifier(unittest.TestCase):
                 else:
                     return img, img_file_name
 
-        ship_dir = '../data/airbus-ship-detection/'
+        ship_dir = '../../../data/airbus-ship-detection/'
         train_image_dir = os.path.join(ship_dir, 'train_v2/')
         valid_image_dir = os.path.join(ship_dir, 'train_v2/')
         masks = pd.read_csv(os.path.join(ship_dir,'train_ship_segmentations_v2.csv'))
@@ -130,7 +130,7 @@ class TestVesselClassifier(unittest.TestCase):
 
     
     def test_load_state_dict(self):
-        state_dict = r'../data/vessel_classifier_state_dict-01.pth'
+        state_dict = r'../../../data/vessel_classifier_state_dict-01.pth'
         model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                                 aux_logits=False)
         model.load_state_dict(torch.load(state_dict))
@@ -139,7 +139,7 @@ class TestVesselClassifier(unittest.TestCase):
 
         
     def test_vessel_dataset(self):
-        ship_dir = '../data/airbus-ship-detection/'
+        ship_dir = '../../../data/airbus-ship-detection/'
         train_image_dir = os.path.join(ship_dir, 'train_v2/')
         masks = pd.read_csv(os.path.join(ship_dir,
                                          'train_ship_segmentations_v2.csv'))
@@ -163,7 +163,7 @@ class TestVesselClassifier(unittest.TestCase):
     def test_validation(self):
         criterion = nn.CrossEntropyLoss()
 
-        ship_dir = '../data/airbus-ship-detection/'
+        ship_dir = '../../../data/airbus-ship-detection/'
         valid_image_dir = os.path.join(ship_dir, 'train_v2/')
         masks = pd.read_csv(os.path.join(ship_dir,
                                          'train_ship_segmentations_v2.csv'))
@@ -200,13 +200,13 @@ class TestVesselClassifier(unittest.TestCase):
         model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                                  aux_logits=False)
         model = model.to('cuda')
-        savepath = '../data/test_vessel_classifier_state_dict.pth'
+        savepath = '../../../data/test_vessel_classifier_state_dict.pth'
         torch.save(model.state_dict(), savepath)
         
         
     def test_full_training_loop(self):
         ImageFile.LOAD_TRUNCATED_IMAGES = True
-        state_dict = r'../data/vessel_classifier_state_dict-01.pth'
+        state_dict = r'../../../data/vessel_classifier_state_dict-01.pth'
         model = torchvision.models.inception_v3(pretrained=False, progress=True, num_classes=2, 
                                                 aux_logits=False)
         model.load_state_dict(torch.load(state_dict))
@@ -218,7 +218,7 @@ class TestVesselClassifier(unittest.TestCase):
         lr = 1e-4
         optimizer = optim.Adam(model.parameters(), lr=lr)
 
-        ship_dir = '../data/airbus-ship-detection/'
+        ship_dir = '../../../data/airbus-ship-detection/'
         train_image_dir = os.path.join(ship_dir, 'train_v2/')
         valid_image_dir = os.path.join(ship_dir, 'train_v2/')
         masks = pd.read_csv(os.path.join(ship_dir,
@@ -300,11 +300,11 @@ class TestVesselClassifier(unittest.TestCase):
             print('[Epoch %d] Validation Accuracy: %.3f | Validation Loss: %.3f\n' %
                  ((epoch + 1), metrics['valid_acc'], metrics['valid_loss']))
             print('Saving Model...\n')
-            savepath = '../data/test_vessel_classifier_state_dict.pth'
+            savepath = '../../../data/test_vessel_classifier_state_dict.pth'
             torch.save(model.state_dict(), savepath)
         print('Finished Training.')
         print('Saving Model...\n')
-        savepath = '../data/test_vessel_classifier_state_dict.pth'
+        savepath = '../../../data/test_vessel_classifier_state_dict.pth'
         torch.save(model.state_dict(), savepath)
         print('Done.')
     

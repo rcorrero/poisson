@@ -1,3 +1,12 @@
+2020/12/7
+TODO:
+- Create unittest for VM
+- Reformat repo Ð put all .py files in directories
+- Increase max number of predicted boxes in RPN
+- Verify all hyperparams
+- Begin training model
+
+
 2020/11/27
 The next step is to use the vessel classification model as a backbone for a vessel
 detection model. I began writing the script `vessel_detector.py` which contains
