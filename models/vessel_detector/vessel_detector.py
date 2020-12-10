@@ -288,16 +288,28 @@ class VesselDataset(Dataset):
 def make_model(backbone_state_dict,
                num_classes,
                anchor_sizes: tuple,
-               box_detections_per_img: int):
+               box_detections_per_img: int,
+               num_trainable_backbone_layers: int):
         inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
         inception.load_state_dict(torch.load(backbone_state_dict))
-        modules = list(inception.children())[:-1]
+        modules = list(inception.children())[:-3]
         backbone = nn.Sequential(*modules)
 
-        for layer in backbone:
-            for p in layer.parameters():
-                p.requires_grad = False # Freezes the backbone layers
+        #for layer in backbone:
+        #    for p in layer.parameters():
+        #        p.requires_grad = False # Freezes the backbone layers
+
+        num_layers = len(backbone)
+        trainable_layers = [num_layers - (3 + i) for i in range(num_trainable_backbone_layers)]
+        print('Trainable layers: \n')
+        for layer_idx, layer in enumerate(backbone):
+            if layer_idx not in trainable_layers:
+                for p in layer.parameters():
+                    p.requires_grad = False # Freezes the backbone layers
+            else:
+                print(layer, '\n\n')
+        print('=================================\n\n')
 
         backbone.out_channels = 2048
 
@@ -527,6 +539,7 @@ def main(savepath, backbone_state_dict=None):
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
         'seed': 0,
         'num_classes': 2,
+        'num_trainable_backbone_layers': 3,
         # Lr in paper is .001 but this may lead to NaN losses
         'lr': 0.001,
         'momentum': 0.9,
@@ -555,10 +568,12 @@ def main(savepath, backbone_state_dict=None):
     anchor_sizes = params['anchor_sizes']
     num_classes = params['num_classes']
     box_detections_per_img = params['box_detections_per_img']
+    num_trainable_backbone_layers = params['num_trainable_backbone_layers']
     model = make_model(backbone_state_dict,
                        num_classes=num_classes,
                        anchor_sizes=anchor_sizes,
-                       box_detections_per_img=box_detections_per_img
+                       box_detections_per_img=box_detections_per_img,
+                       num_trainable_backbone_layers=num_trainable_backbone_layers
     )
     
     device = torch.device('cuda')
