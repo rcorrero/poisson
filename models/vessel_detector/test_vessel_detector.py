@@ -161,7 +161,7 @@ class TestVesselDetector(unittest.TestCase):
                 )
             else:
                 mAP = evaluate(model, valid_loader, device, thresh_list)
-            #print_metrics(metrics, epoch, thresh_list)
+                print_metrics(mAP, epoch, thresh_list)
             #print('Saving Model...\n')
             #torch.save(model.state_dict(), savepath)
             #print('Model Saved.\n')
