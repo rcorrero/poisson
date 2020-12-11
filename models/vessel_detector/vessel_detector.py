@@ -541,7 +541,7 @@ def main(savepath, backbone_state_dict=None):
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
         'seed': 0,
         'num_classes': 2,
-        'num_trainable_backbone_layers': 5,
+        'num_trainable_backbone_layers': 3,
         # Lr in paper is .001 but this may lead to NaN losses
         'lr': 0.001,
         'momentum': 0.9,
