@@ -46,6 +46,7 @@ class TestVesselDetector(unittest.TestCase):
             # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
             'seed': 0,
             'num_classes': 2,
+            'num_trainable_backbone_layers': 3,
             'lr': 0.001,
             'momentum': 0.9,
             'weight_decay': 0.0005,
@@ -59,9 +60,9 @@ class TestVesselDetector(unittest.TestCase):
             # Increase number of detections since there may be many vessels in an image
             'box_detections_per_img': 256,
             # Use small anchor boxes since targets are small
-            'anchor_sizes': (8, 16, 32, 64, 128),
+            'anchor_sizes': (8, 16, 32, 64, 128, 256),
             # IoU thresholds for mAP calculation
-            'thresh_list': [0.5, 0.75, 1.0]
+            'thresh_list': np.arange(0.5, 0.76, 0.05).round(8)
         }
 
         seed = params['seed']
@@ -73,10 +74,12 @@ class TestVesselDetector(unittest.TestCase):
         anchor_sizes = params['anchor_sizes']
         num_classes = params['num_classes']
         box_detections_per_img = params['box_detections_per_img']
+        num_trainable_backbone_layers = params['num_trainable_backbone_layers']
         model = make_model(backbone_state_dict,
                            num_classes=num_classes,
                            anchor_sizes=anchor_sizes,
-                           box_detections_per_img=box_detections_per_img
+                           box_detections_per_img=box_detections_per_img,
+                           num_trainable_backbone_layers=num_trainable_backbone_layers
         )
 
         device = torch.device('cuda')
@@ -157,7 +160,7 @@ class TestVesselDetector(unittest.TestCase):
                                         num_epochs = num_epochs
                 )
             else:
-                metrics = evaluate(model, valid_loader, device, thresh_list)
+                mAP = evaluate(model, valid_loader, device, thresh_list)
             #print_metrics(metrics, epoch, thresh_list)
             #print('Saving Model...\n')
             #torch.save(model.state_dict(), savepath)
