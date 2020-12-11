@@ -314,9 +314,10 @@ def make_model(backbone_state_dict,
         backbone.out_channels = 2048
 
         # Use smaller anchor boxes since targets are relatively small
-        anchor_generator = AnchorGenerator(sizes=(anchor_sizes,),
-                                           aspect_ratios=((0.5, 1.0, 2.0),))
-
+        anchor_generator = AnchorGenerator(
+            sizes=anchor_sizes,
+            aspect_ratios=((0.25, 0.5, 1.0, 2.0, 4.0),) * len(anchor_sizes)
+        )
         model = FasterRCNN(backbone,
                            min_size=299,   # Backbone expects 299x299 inputs
                            max_size=299,   # so you don't need to rescale
@@ -556,7 +557,7 @@ def main(savepath, backbone_state_dict=None):
         # Increase number of detections since there may be many vessels in an image
         'box_detections_per_img': 256,
         # Use small anchor boxes since targets are small
-        'anchor_sizes': (8, 16, 32, 64, 128, 256),
+        'anchor_sizes': ((4,), (8,), (16,), (32,), (64,)),
         # IoU thresholds for mAP calculation
         'thresh_list': np.arange(0.5, 0.76, 0.05).round(8)
     }
