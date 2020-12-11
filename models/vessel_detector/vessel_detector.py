@@ -475,8 +475,8 @@ def calculate_map(gt_boxes,
         if pr_boxes.shape[0] == 0:
             return 1.0
         return 0.0
-    if pr_boxes.shape[0] == 0:
-        return 0.0
+    #if pr_boxes.shape[0] == 0:
+    #    return 0.0
     # sorting
     pr_boxes = pr_boxes[scores.argsort().flip(-1)]
     iou_mat = calculate_iou(gt_boxes,pr_boxes,form)
@@ -520,16 +520,18 @@ def evaluate(model, data_loader, device, thresh_list):
     for thresh in thresh_list:
         mAP_dict[thresh] = np.mean(mAP_dict[thresh])
     # Create metrics dict
-    metrics = mAP_dict
-    metrics['eval_time'] = end - start
-    return metrics
+    #metrics = mAP_dict
+    #metrics['eval_time'] = end - start
+    #return metrics
+    mAP = np.mean(list(mAP_dict.values()))
+    return mAP
 
 
-def print_metrics(metrics: dict, epoch: int, thresh_list) -> None:
+def print_metrics(mAP: float, epoch: int, thresh_list) -> None:
     print('[Epoch %-2.d] Evaluation results:' % (epoch + 1))
-    for thresh in thresh_list:
-        mAP = metrics[thresh]
-        print('    IoU (>) Threshold: %-3.3f | mAP: %-3.3f' % (thresh, mAP))
+    #for thresh in thresh_list:
+    #    mAP = metrics[thresh]
+    print('    IoU (>) Thresholds: %s | mAP: %-5.5f' % (thresh_list, mAP))
     print('\n')
 
 
@@ -550,13 +552,13 @@ def main(savepath, backbone_state_dict=None):
         'shuffle': True,       
         'batch_size': 16,
         'num_epochs': 30,
-        'print_every': 100,
+        'print_every': 500,
         # Increase number of detections since there may be many vessels in an image
         'box_detections_per_img': 256,
         # Use small anchor boxes since targets are small
-        'anchor_sizes': (8, 16, 32, 64, 128),
+        'anchor_sizes': (8, 16, 32, 64, 128, 256),
         # IoU thresholds for mAP calculation
-        'thresh_list': [0.5, 0.75, 1.0]
+        'thresh_list': np.arange(0.5, 0.76, 0.05).round(8)
     }
     
     seed = params['seed']
@@ -653,8 +655,8 @@ def main(savepath, backbone_state_dict=None):
                                 num_epochs = num_epochs
         )
         print('Epoch %d completed. Running validation...\n' % (epoch + 1))
-        metrics = evaluate(model, valid_loader, device, thresh_list)
-        print_metrics(metrics, epoch, thresh_list)
+        mAP = evaluate(model, valid_loader, device, thresh_list)
+        print_metrics(mAP, epoch, thresh_list)
         print('Saving Model...\n')
         torch.save(model.state_dict(), savepath)
         print('Model Saved.\n')

@@ -1,3 +1,8 @@
+2020/12/10
+TODO: 
+- Verify mAP calculation in `vessel_detector.py` is correct.
+
+
 2020/19/9
 TODO:
 - Figure out how to load model from state_dict
