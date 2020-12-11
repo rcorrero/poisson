@@ -293,7 +293,7 @@ def make_model(backbone_state_dict,
         inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
                                                     num_classes=num_classes, aux_logits=False)
         inception.load_state_dict(torch.load(backbone_state_dict))
-        modules = list(inception.children())[:-3]
+        modules = list(inception.children())[:-1]
         backbone = nn.Sequential(*modules)
 
         #for layer in backbone:
@@ -301,7 +301,7 @@ def make_model(backbone_state_dict,
         #        p.requires_grad = False # Freezes the backbone layers
 
         num_layers = len(backbone)
-        trainable_layers = [num_layers - (3 + i) for i in range(num_trainable_backbone_layers)]
+        trainable_layers = [num_layers - (i + 1) for i in range(num_trainable_backbone_layers)]
         print('Trainable layers: \n')
         for layer_idx, layer in enumerate(backbone):
             if layer_idx not in trainable_layers:
@@ -541,7 +541,7 @@ def main(savepath, backbone_state_dict=None):
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
         'seed': 0,
         'num_classes': 2,
-        'num_trainable_backbone_layers': 3,
+        'num_trainable_backbone_layers': 5,
         # Lr in paper is .001 but this may lead to NaN losses
         'lr': 0.001,
         'momentum': 0.9,
