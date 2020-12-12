@@ -339,7 +339,7 @@ def train_print(i, running_loss,
           (epoch + 1, i + 1, (running_loss / print_every)))
     print('           Number of Samples Seen: %d' %
           (batch_size * ((i + 1) + epoch * num_minibatches_per_epoch)))
-    print('           Estimated Hours Remaining: %.2f\n' % time_left)
+    #print('           Estimated Hours Remaining: %.2f\n' % time_left)
 
 
 def train_one_epoch(model, 
@@ -476,8 +476,8 @@ def calculate_map(gt_boxes,
         if pr_boxes.shape[0] == 0:
             return 1.0
         return 0.0
-    #if pr_boxes.shape[0] == 0:
-    #    return 0.0
+    if pr_boxes.shape[0] == 0:
+        return 0.0
     # sorting
     pr_boxes = pr_boxes[scores.argsort().flip(-1)]
     iou_mat = calculate_iou(gt_boxes,pr_boxes,form)
@@ -551,7 +551,7 @@ def main(savepath, backbone_state_dict=None):
         'no_null_samples': True,
         'test_size': 0.01,
         'shuffle': True,       
-        'batch_size': 16,
+        'batch_size': 12,
         'num_epochs': 30,
         'print_every': 500,
         # Increase number of detections since there may be many vessels in an image

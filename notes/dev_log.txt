@@ -1,6 +1,8 @@
 2020/12/10
-TODO: 
-- Verify mAP calculation in `vessel_detector.py` is correct.
+Completed:
+- Fix mAP calculation in `vessel_detector.py`.
+- Fix anchor generator so that the number of anchors is correct
+- Change `vessel_detector.py` code such that a set of layers may be trained.
 
 
 2020/19/9
