@@ -17,6 +17,7 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.models.detection.faster_rcnn import FasterRCNN, FastRCNNPredictor
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms import ToTensor, Compose, RandomHorizontalFlip,\
     RandomVerticalFlip,  Normalize
@@ -284,50 +285,38 @@ class VesselDataset(Dataset):
             return img
         
 
+def get_instance_segmentation_model(num_classes):
+    # load an instance segmentation model pre-trained on COCO
+    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+
+    # get the number of input features for the classifier
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    # replace the pre-trained head with a new one
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
+    # now get the number of input features for the mask classifier
+    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
+    hidden_layer = 256
+    # and replace the mask predictor with a new one
+    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
+                                                       hidden_layer,
+                                                       num_classes)
+
+    return model
+        
+
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
 def make_model(backbone_state_dict,
                num_classes,
                anchor_sizes: tuple,
                box_detections_per_img: int,
                num_trainable_backbone_layers: int):
-        inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
-                                                    num_classes=num_classes, aux_logits=False)
-        inception.load_state_dict(torch.load(backbone_state_dict))
-        modules = list(inception.children())[:-1]
-        backbone = nn.Sequential(*modules)
-
-        #for layer in backbone:
-        #    for p in layer.parameters():
-        #        p.requires_grad = False # Freezes the backbone layers
-
-        num_layers = len(backbone)
-        if (num_trainable_backbone_layers < num_layers) and (num_trainable_backbone_layers != -1):
-            trainable_layers = [num_layers - (i + 1) for i in range(num_trainable_backbone_layers)]
-            print('Trainable layers: \n')
-            for layer_idx, layer in enumerate(backbone):
-                if layer_idx not in trainable_layers:
-                    for p in layer.parameters():
-                        p.requires_grad = False # Freezes the backbone layers
-                else:
-                    print(layer, '\n\n')
-            print('=================================\n\n')
-
-        backbone.out_channels = 2048
-
-        # Use smaller anchor boxes since targets are relatively small
-        anchor_generator = AnchorGenerator(
-            sizes=anchor_sizes,
-            aspect_ratios=((0.25, 0.5, 1.0, 2.0, 4.0),) * len(anchor_sizes)
-        )
-        model = FasterRCNN(backbone,
-                           min_size=299,   # Backbone expects 299x299 inputs
-                           max_size=299,   # so you don't need to rescale
-                           rpn_anchor_generator=anchor_generator,
-                           box_predictor=FastRCNNPredictor(1024, num_classes),
-                           box_detections_per_img=box_detections_per_img
-        )
-
-        return model
+    '''
+    Returns a Mask R-CNN model with pretrained ResNet-50 backbone. Parameters retained from 
+    `vessel_detector.py` implementation of `make_model` for compatability with utility methods.
+    '''
+    model = get_instance_segmentation_model(num_classes)
+    return model
 
 
 def train_print(i, running_loss, 
