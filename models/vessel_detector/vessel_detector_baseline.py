@@ -17,7 +17,6 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.models.detection.faster_rcnn import FasterRCNN, FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.ops.boxes import box_iou
 from torchvision.transforms import ToTensor, Compose, RandomHorizontalFlip,\
     RandomVerticalFlip,  Normalize
@@ -283,27 +282,7 @@ class VesselDataset(Dataset):
             img = self.test_transform(img)
             assert not np.any(np.isnan(img.numpy()))
             return img
-        
 
-def get_instance_segmentation_model(num_classes):
-    # load an instance segmentation model pre-trained on COCO
-    model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
-
-    # get the number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
-    # now get the number of input features for the mask classifier
-    in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-    hidden_layer = 256
-    # and replace the mask predictor with a new one
-    model.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                       hidden_layer,
-                                                       num_classes)
-
-    return model
-        
 
 # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
 def make_model(backbone_state_dict,
@@ -312,10 +291,15 @@ def make_model(backbone_state_dict,
                box_detections_per_img: int,
                num_trainable_backbone_layers: int):
     '''
-    Returns a Mask R-CNN model with pretrained ResNet-50 backbone. Parameters retained from 
+    Returns a Faster R-CNN model with pretrained ResNet-50 backbone. Parameters retained from 
     `vessel_detector.py` implementation of `make_model` for compatability with utility methods.
     '''
-    model = get_instance_segmentation_model(num_classes)
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False,
+                                                                 progress=True,
+                                                                 num_classes=num_classes,
+                                                                 pretrained_backbone=True,
+                                                                 trainable_backbone_layers=3
+    )
     return model
 
 
@@ -661,5 +645,5 @@ def main(savepath, backbone_state_dict=None):
 
 if __name__ == '__main__':
     backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
-    savepath = r'vessel_detector_state_dict.pth'
+    savepath = r'vessel_detector_baseline_state_dict.pth'
     main(savepath=savepath, backbone_state_dict=backbone_state_dict)
