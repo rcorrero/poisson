@@ -1,3 +1,11 @@
+2020/12/14
+Completed:
+- Create code to train baseline vessel detection model using pretrained backbone to use as control and make sure code is functioning properly.
+- Change `num_trainable_backbone_layers` parameter in `vessel_detector.py` to allow for all layers of the backbone to be trainable.
+
+I began training a baseline Faster-RCNN model with pretrained ResNet-50 backbone. If the model functions correctly and shows evidence of learning, and all of the metric calculations appear to be correct, then I will decide whether to begin training a new model using the pretrained backbone. If the baseline is performing much better than the model currently being trained, which only allows for the training of three of the inception backbone's layers, I will begin training a new version of the model in which all of the inception model's layers are trainable. This will serve as the best-case scenario for the model, and such an initialization may be viewed as treating the pretrained backbone weights as an initialization for the backbone only. If this also underperforms the baseline, then I will simply use the baseline as the production vessel detection model, and treat the inception backbone as a pre-filter for the vessel detection algorithm.
+
+
 2020/12/10
 Completed:
 - Fix mAP calculation in `vessel_detector.py`.

@@ -639,5 +639,5 @@ def main(savepath, backbone_state_dict=None):
 
 if __name__ == '__main__':
     backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
-    savepath = r'vessel_detector_state_dict.pth'
+    savepath = r'vessel_detector_baseline_state_dict.pth'
     main(savepath=savepath, backbone_state_dict=backbone_state_dict)
