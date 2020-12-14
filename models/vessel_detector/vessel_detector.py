@@ -501,7 +501,6 @@ def calculate_map(gt_boxes,
 def evaluate(model, data_loader, device, thresh_list):
     #cpu_device = torch.device("cpu")
     model.eval()
-    running_loss = 0.0
     start = time.time()
     mAP_dict = {thresh: [] for thresh in thresh_list}
     for images, targets in data_loader:
@@ -509,8 +508,6 @@ def evaluate(model, data_loader, device, thresh_list):
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         outputs = model(images, targets)
-        losses = sum(loss for loss in outputs.values())
-        running_loss += losses
         #outputs = [{k: v.to(device) for k, v in t.items()} for t in outputs]
         # Calculate mAP
         for thresh in thresh_list:
@@ -529,16 +526,14 @@ def evaluate(model, data_loader, device, thresh_list):
     #metrics['eval_time'] = end - start
     #return metrics
     mAP = np.mean(list(mAP_dict.values()))
-    mLoss = running_loss / len(data_loader.dataset)
-    return mAP,mLoss
+    return mAP
 
 
-def print_metrics(mAP: float, mLoss: float,  epoch: int, thresh_list) -> None:
+def print_metrics(mAP: float, epoch: int, thresh_list) -> None:
     print('[Epoch %-2.d] Evaluation results:' % (epoch + 1))
     #for thresh in thresh_list:
     #    mAP = metrics[thresh]
     print('    IoU (>) Thresholds: %s | mAP: %-5.5f' % (thresh_list, mAP))
-    print('    Loss: %-5.5f' % (mLoss))
     print('\n')
 
 
@@ -662,8 +657,8 @@ def main(savepath, backbone_state_dict=None):
                                 num_epochs = num_epochs
         )
         print('Epoch %d completed. Running validation...\n' % (epoch + 1))
-        mAP, mLoss = evaluate(model, valid_loader, device, thresh_list)
-        print_metrics(mAP, mLoss, epoch, thresh_list)
+        mAP = evaluate(model, valid_loader, device, thresh_list)
+        print_metrics(mAP, epoch, thresh_list)
         print('Saving Model...\n')
         torch.save(model.state_dict(), savepath)
         print('Model Saved.\n')
