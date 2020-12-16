@@ -40,7 +40,10 @@ class TestVesselDetector(unittest.TestCase):
 
 
     def main(self, train: bool):
-        backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
+        #backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
+        backbone_state_dict = None
+        # Set `state_dict = None` to train new model; otherwise `state_dict` is loaded
+        state_dict = r'../../../data/vd_state_dicts/vessel_detector_state_dict.pth'
         # Define all training params in one dict to make assumptions clear
         params = {
             # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
@@ -75,12 +78,21 @@ class TestVesselDetector(unittest.TestCase):
         num_classes = params['num_classes']
         box_detections_per_img = params['box_detections_per_img']
         num_trainable_backbone_layers = params['num_trainable_backbone_layers']
-        model = make_model(backbone_state_dict,
-                           num_classes=num_classes,
-                           anchor_sizes=anchor_sizes,
-                           box_detections_per_img=box_detections_per_img,
-                           num_trainable_backbone_layers=num_trainable_backbone_layers
-        )
+        if state_dict is not None:
+            model = make_model_from_dict(state_dict,
+                                         backbone_state_dict,
+                                         num_classes=num_classes,
+                                         anchor_sizes=anchor_sizes,
+                                         box_detections_per_img=box_detections_per_img,
+                                         num_trainable_backbone_layers=num_trainable_backbone_layers
+            )
+        else:
+            model = make_model(backbone_state_dict,
+                               num_classes=num_classes,
+                               anchor_sizes=anchor_sizes,
+                               box_detections_per_img=box_detections_per_img,
+                               num_trainable_backbone_layers=num_trainable_backbone_layers
+            )
 
         device = torch.device('cuda')
         model = model.to(device)

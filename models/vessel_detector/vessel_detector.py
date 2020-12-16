@@ -330,6 +330,78 @@ def make_model(backbone_state_dict,
         return model
 
 
+# Code for loading full model from state dict:
+def make_model_from_dict(state_dict_path,
+                         backbone_state_dict_path,
+                         num_classes,
+                         anchor_sizes: tuple,
+                         box_detections_per_img: int,
+                         num_trainable_backbone_layers):
+    # Adapted from https://discuss.pytorch.org/t/faster-rcnn-with-inceptionv3-backbone-very-slow/91455
+    def _make_model(backbone_state_dict,
+                num_classes,
+                anchor_sizes: tuple,
+                box_detections_per_img: int,
+                num_trainable_backbone_layers: int):
+        inception = torchvision.models.inception_v3(pretrained=False, progress=False, 
+                                                    num_classes=num_classes, aux_logits=False)
+        if backbone_state_dict is not None:
+            inception.load_state_dict(torch.load(backbone_state_dict))
+        modules = list(inception.children())[:-1]
+        backbone = nn.Sequential(*modules)
+
+        #for layer in backbone:
+        #    for p in layer.parameters():
+        #        p.requires_grad = False # Freezes the backbone layers
+
+        num_layers = len(backbone)
+        if (num_trainable_backbone_layers < num_layers) and (num_trainable_backbone_layers != -1):
+            trainable_layers = [num_layers - (3 + i) for i in range(num_trainable_backbone_layers)]
+            print('Trainable layers: \n')
+            for layer_idx, layer in enumerate(backbone):
+                if layer_idx not in trainable_layers:
+                    for p in layer.parameters():
+                        p.requires_grad = False # Freezes the backbone layers
+                else:
+                    print(layer, '\n\n')
+            print('=================================\n\n')
+
+        backbone.out_channels = 2048
+
+        # Use smaller anchor boxes since targets are relatively small
+        anchor_generator = AnchorGenerator(
+            sizes=anchor_sizes,
+            aspect_ratios=((0.25, 0.5, 1.0, 2.0, 4.0),) * len(anchor_sizes)
+        )
+        model = FasterRCNN(backbone,
+                           min_size=299,   # Backbone expects 299x299 inputs
+                           max_size=299,   # so you don't need to rescale
+                           rpn_anchor_generator=anchor_generator,
+                           box_predictor=FastRCNNPredictor(1024, num_classes),
+                           box_detections_per_img=box_detections_per_img
+        )
+
+        return model
+
+
+    model = _make_model(backbone_state_dict_path, 
+                        num_classes, 
+                        anchor_sizes, 
+                        box_detections_per_img, 
+                        num_trainable_backbone_layers
+    )
+    model_dict = model.state_dict()
+    state_dict = torch.load(state_dict_path)
+    new_state_dict = {}
+    for sd_key, model_key in list(zip(state_dict.keys(), model_dict.keys())):
+        new_state_dict[model_key] = state_dict[sd_key]
+    assert len(new_state_dict) == len(model_dict)
+    for nsd_key, model_key in list(zip(new_state_dict.keys(), model_dict.keys())):
+        assert nsd_key == model_key
+    model.load_state_dict(new_state_dict)
+    return model
+
+
 def train_print(i, running_loss, 
                 print_every, 
                 batch_size, 
@@ -537,7 +609,9 @@ def print_metrics(mAP: float, epoch: int, thresh_list) -> None:
     print('\n')
 
 
-def main(savepath, backbone_state_dict=None):
+def main(savepath,
+         state_dict,
+         backbone_state_dict):
     # Define all training params in one dict to make assumptions clear
     params = {
         # optimizer params from: https://arxiv.org/pdf/1506.01497.pdf
@@ -573,12 +647,21 @@ def main(savepath, backbone_state_dict=None):
     num_classes = params['num_classes']
     box_detections_per_img = params['box_detections_per_img']
     num_trainable_backbone_layers = params['num_trainable_backbone_layers']
-    model = make_model(backbone_state_dict,
-                       num_classes=num_classes,
-                       anchor_sizes=anchor_sizes,
-                       box_detections_per_img=box_detections_per_img,
-                       num_trainable_backbone_layers=num_trainable_backbone_layers
-    )
+    if state_dict is not None:
+        model = make_model_from_dict(state_dict,
+                                     backbone_state_dict,
+                                     num_classes=num_classes,
+                                     anchor_sizes=anchor_sizes,
+                                     box_detections_per_img=box_detections_per_img,
+                                     num_trainable_backbone_layers=num_trainable_backbone_layers
+        )
+    else:
+        model = make_model(backbone_state_dict,
+                           num_classes=num_classes,
+                           anchor_sizes=anchor_sizes,
+                           box_detections_per_img=box_detections_per_img,
+                           num_trainable_backbone_layers=num_trainable_backbone_layers
+        )
     
     device = torch.device('cuda')
     model = model.to(device)
@@ -666,6 +749,11 @@ def main(savepath, backbone_state_dict=None):
 
 
 if __name__ == '__main__':
-    backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
+    #backbone_state_dict = r'../../../data/vessel_classifier_state_dict.pth'
+    backbone_state_dict = None
+    # Set `state_dict = None` to train new model; otherwise `state_dict` is loaded
+    state_dict = r'../../../data/vd_state_dicts/vessel_detector_state_dict.pth'
     savepath = r'vessel_detector_state_dict.pth'
-    main(savepath=savepath, backbone_state_dict=backbone_state_dict)
+    main(savepath=savepath,
+         state_dict=state_dict,
+         backbone_state_dict=backbone_state_dict)

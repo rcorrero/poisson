@@ -1,3 +1,16 @@
+2020/12/16
+- Added `make_model_from_dict` function to `vessel_detector.py` which allows for the loading of model parameters from a state dict. Using this I can continue training the most promising of the models (with pretrained InceptionV3 backbone).
+- Started training final model (standard architecture — InceptionV3 backbone trained on vessel imagery plus Faster R-CNN head with standard Fast R-CNN box predictor) with backprop through all layers of the backbone. Although I doubt this model will perform better than the model trained with backprop on only the last three of the backbone layers, it will serve as a good comparison. If it does perform better, then a new model may be trained with backprop on some number of layers of the backbone greater than three but not including all layers to test for an internal optimum. 
+
+After this model is trained, there will be four trained models, each having trained for 30 epochs using the same optimizer and settings:
+- pytorch implementation of Faster R-CNN with pretrained ResNet-50 backbone (control)
+- Faster R-CNN + InceptionV3 backbone (pretrained by me) with backprop through 0 backbone layers
+- Faster R-CNN + InceptionV3 backbone (pretrained by me) with backprop through 3 backbone layers
+- Faster R-CNN + InceptionV3 backbone (pretrained by me) with backprop through ALL backbone layers
+
+The next step is therefore to create a test suite on which to compare the models.
+
+
 2020/12/14
 Completed:
 - Create code to train baseline vessel detection model using pretrained backbone to use as control and make sure code is functioning properly.
