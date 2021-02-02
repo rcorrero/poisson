@@ -1,3 +1,68 @@
+2021/2/1
+TODO:
+Write code to:
+- Test models at varying probability thresholds
+- Test models at varying IoU thresholds
+- Generate FP-TP curve and calculate AUC for each model
+
+
+2021/1/26
+- Changed `make_target` in `vessel_detector.py` to accept format generated for hand-made test samples.
+- Modified bounding-box filtering methods to work with test sample bbox format.
+
+TEST RESULTS:
+=====================25%=IoU=50%=Prob=Threshold====================
+vd_baseline:
+True positives: 0
+False positives: 188
+Precision: 0.0000
+Number boxes: 1002
+
+
+vd_some_layers:
+True positives: 16
+False positives: 69
+Precision: 0.1882
+Number boxes: 1002
+
+
+vd_all_layers:
+True positives: 48
+False positives: 18
+Precision: 0.7273
+Number boxes: 1002
+=====================55%=IoU=50%=Prob=Threshold====================
+vd_baseline:
+True positives: 0
+False positives: 188
+Precision: 0.0000
+Number boxes: 1002
+
+
+vd_some_layers:
+True positives: 8
+False positives: 77
+Precision: 0.0941
+Number boxes: 1002
+
+
+vd_all_layers:
+True positives: 40
+False positives: 26
+Precision: 0.6061
+Number boxes: 1002
+======================================================================
+
+
+2021/1/12
+TODO:
+- Create code to test object detection models on test images:
+- Write code to load bboxes for test imagery (in bboxes.csv) into format appropriate for `evaluate` in vessel_detector.py.
+- Calculate mAP for each of the trained models using `evaluate`. 
+- Design and implement pipeline for labeling full size PlanetScene images using model:
+- Create code to split full size PlanetScene images into 299x299 tiles, label each tile using a model, and combine the outputs into a single result for the entire image.
+
+
 2020/12/16
 - Added `make_model_from_dict` function to `vessel_detector.py` which allows for the loading of model parameters from a state dict. Using this I can continue training the most promising of the models (with pretrained InceptionV3 backbone).
 - Started training final model (standard architecture — InceptionV3 backbone trained on vessel imagery plus Faster R-CNN head with standard Fast R-CNN box predictor) with backprop through all layers of the backbone. Although I doubt this model will perform better than the model trained with backprop on only the last three of the backbone layers, it will serve as a good comparison. If it does perform better, then a new model may be trained with backprop on some number of layers of the backbone greater than three but not including all layers to test for an internal optimum. 
