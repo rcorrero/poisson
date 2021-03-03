@@ -1,6 +1,8 @@
-2021/2/1
+2021/2/8
 TODO:
 Write code to:
+- Rewrite code to calculate IoU of model predictions
+- Add blob detection method for predefined regions (anchor points)
 - Test models at varying probability thresholds
 - Test models at varying IoU thresholds
 - Generate FP-TP curve and calculate AUC for each model
